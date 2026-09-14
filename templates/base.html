@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Diário de Bordo{% endblock %}</title>
+    
+    <!-- É ESTA LINHA AQUI QUE PUXA O CSS DO FLASK -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <!-- BARRA NAVEGAÇÃO SUPERIOR -->
+    <header class="top-navbar">
+        <div class="safety-stripe"></div>
+        <div class="navbar-content">
+            <div class="brand-logo">Diário de Bordo</div>
+            <nav class="nav-menu">
+                <a href="/" class="nav-item {% if aba_ativa == 'painel' %}active{% endif %}">📊 Painel</a>
+                <a href="/opcoes" class="nav-item {% if aba_ativa == 'opcoes' %}active{% endif %}">⚙️ Opções</a>
+            </nav>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- O conteúdo de dashboard.html e opcoes.html entra aqui -->
+        {% block content %}{% endblock %}
+    </div>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

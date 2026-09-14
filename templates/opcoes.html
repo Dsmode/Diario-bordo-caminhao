@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block title %}Diário de Bordo - Opções{% endblock %}
+
+{% block content %}
+<div class="form-section">
+    <h3 class="section-title">Configurações do Perfil & Moeda</h3>
+    <form action="/salvar_opcoes" method="POST">
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Nome do Motorista</label>
+                <!-- O valor padrão virá do banco de dados -->
+                <input type="text" name="nome" value="{{ jogador.nome }}" required>
+            </div>
+
+            <div class="form-group">
+                <label>Empresa Empregadora</label>
+                <input type="text" name="empresa_base" value="{{ jogador.empresa_base }}" required>
+            </div>
+
+            <div class="form-group">
+                <label>Cidade Base</label>
+                <input type="text" name="cidade_base" value="{{ jogador.cidade_base }}" required>
+            </div>
+
+            <div class="form-group">
+                <label>Fase Atual & Cargo</label>
+                <select name="fase">
+                    <option value="1" {% if jogador.fase == 1 %}selected{% endif %}>Fase 1 - Empregado</option>
+                    <option value="2" {% if jogador.fase == 2 %}selected{% endif %}>Fase 2 - Agregado</option>
+                    <option value="3" {% if jogador.fase == 3 %}selected{% endif %}>Fase 3 - Autônomo</option>
+                    <option value="4" {% if jogador.fase == 4 %}selected{% endif %}>Fase 4 - Empresário</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Moeda Exibida no Sistema</label>
+                <select name="moeda">
+                    <option value="R$" {% if jogador.moeda == 'R$' %}selected{% endif %}>Reais (R$)</option>
+                    <option value="$" {% if jogador.moeda == '$' or not jogador.moeda %}selected{% endif %}>Dólares ($)</option>
+                    <option value="€" {% if jogador.moeda == '€' %}selected{% endif %}>Euros (€)</option>
+                </select>
+            </div>
+        </div>
+
+        <button type="submit" class="btn-submit">Salvar Configurações</button>
+    </form>
+</div>
+{% endblock %}
