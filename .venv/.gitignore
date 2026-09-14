@@ -1,6 +1,24 @@
+# Ambiente Virtual
 venv/
+env/
+ENV/
+
+# Python e Cache
 __pycache__/
 *.pyc
-instance/
+*.pyo
+*.pyd
+
+# Banco de Dados SQLite
 *.db
+*.sqlite3
+
+# Pasta de Instância do Flask
+instance/
+
+# Variáveis de Ambiente
 .env
+
+# Arquivos do Sistema Operacional
+.DS_Store
+Thumbs.db
