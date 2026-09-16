@@ -37,13 +37,15 @@
     <div class="card">
         <h3>COMISSÕES ({% if jogador.fase == 1 %}5%{% elif jogador.fase == 2 %}10%{% else %}20%{% endif %})</h3>
         <div class="value" style="color: var(--texto-claro);">
-            {{ (viagens | sum(attribute='comissao_recebida')) | moeda(jogador.moeda) }}
+            {{ total_comissoes | moeda(jogador.moeda) }}
         </div>
     </div>
 
     <div class="card">
         <form action="/avancar_dia" method="POST" style="margin: 0;">
-            <button type="submit" class="btn-test" title="Clique para simular a passagem de 1 dia">🧪 +1 Dia (Teste)</button>
+            <button type="submit" class="btn-test" title="Clique para simular a passagem de 1 dia">
+                <span class="material-symbols-outlined" style="font-size: 14px; margin-right: 4px;">science</span> +1 Dia (Teste)
+            </button>
         </form>
 
         <h3>DIAS TRABALHADOS</h3>
@@ -63,7 +65,9 @@
 
 <!-- Lançar Novo Frete -->
 <div class="form-section">
-    <h3 class="section-title">📦 Lançar Novo Frete</h3>
+    <h3 class="section-title">
+        <span style="display: flex; align-items: center; gap: 8px;"><span class="material-symbols-outlined">inventory_2</span> Lançar Novo Frete</span>
+    </h3>
     <form action="/registrar_viagem" method="POST" id="formViagem">
         <div class="form-grid">
             <div class="form-group">
@@ -120,7 +124,7 @@
 <!-- Atualizações do Dia -->
 <div class="form-section" id="secao-atualizacoes">
     <div class="section-title">
-        <span>⏱️ Atualizações do Dia</span>
+        <span style="display: flex; align-items: center; gap: 8px;"><span class="material-symbols-outlined">schedule</span> Atualizações do Dia</span>
         <span style="font-size: 0.8em; color: var(--texto-mudo);">Dia {{ "%02d"|format(jogador.dias_trabalhados) }} • Ciclo {{ jogador.ciclo }}</span>
     </div>
     
@@ -169,7 +173,9 @@
                 <input type="text" name="observacao" placeholder="Ex: Almoço no posto de gasolina">
             </div>
         </div>
-        <button type="submit" class="btn-add-event">➕ Registrar Ocorrido</button>
+        <button type="submit" class="btn-add-event" style="display: flex; justify-content: center; align-items: center; gap: 8px;">
+            <span class="material-symbols-outlined" style="font-size: 18px;">add_circle</span> Registrar Ocorrido
+        </button>
     </form>
 
     <div style="margin-top: 24px; border-top: 1px solid var(--borda); padding-top: 16px;">
@@ -180,13 +186,14 @@
 
         <div class="log-timeline" id="containerTimeline">
             {% for ev in eventos_pendentes %}
-            <div class="log-card {% if ev.em_servico %}in-service{% endif %}" id="evento-card-{{ ev.id }}">
+            <!-- Usa a fase gravada no evento (ev.fase_jogador) e não a do jogador atual -->
+            <div class="log-card {% if ev.em_servico and ev.fase_jogador < 3 %}in-service{% endif %}" id="evento-card-{{ ev.id }}">
                 <div class="log-left">
                     <span class="log-time">{{ ev.hora }}</span>
                     <div>
                         <div>
                             <span class="log-title">{{ ev.tipo }}</span>
-                            <span class="log-city">📍 {{ ev.cidade }}</span>
+                            <span class="log-city" style="display: inline-flex; align-items: center; gap: 2px;"><span class="material-symbols-outlined" style="font-size: 14px;">location_on</span> {{ ev.cidade }}</span>
                         </div>
                         {% if ev.observacao %}
                         <div class="log-obs">"{{ ev.observacao }}"</div>
@@ -196,8 +203,13 @@
 
                 <div class="log-right">
                     {% if ev.em_servico %}
-                        <span class="badge-status badge-service">Em Serviço</span>
-                        <span class="log-value green">{{ ev.valor | moeda(jogador.moeda) }}</span>
+                        {% if ev.fase_jogador < 3 %}
+                            <span class="badge-status badge-service">Em Serviço</span>
+                            <span class="log-value green">{{ ev.valor | moeda(jogador.moeda) }}</span>
+                        {% else %}
+                            <span class="badge-status badge-particular">Em Serviço</span>
+                            <span class="log-value red">- {{ ev.valor | moeda(jogador.moeda) }}</span>
+                        {% endif %}
                     {% elif ev.valor > 0 %}
                         <span class="badge-status badge-particular">Particular</span>
                         <span class="log-value red">- {{ ev.valor | moeda(jogador.moeda) }}</span>
@@ -207,7 +219,9 @@
                     {% endif %}
 
                     <form action="/excluir_evento/{{ ev.id }}" method="POST" style="margin: 0;">
-                        <button type="submit" class="btn-icon-delete" title="Remover evento">✕</button>
+                        <button type="submit" class="btn-icon-delete" title="Remover evento">
+                            <span class="material-symbols-outlined" style="font-size: 18px;">close</span>
+                        </button>
                     </form>
                 </div>
             </div>
@@ -219,7 +233,9 @@
         </div>
 
         <form action="/lancar_dia" method="POST" id="formLancarDia" style="{% if not eventos_pendentes %}display: none;{% endif %}">
-            <button type="submit" class="btn-lancar-dia">🏁 Encerrar Jornada e Lançar Dia</button>
+            <button type="submit" class="btn-lancar-dia">
+                <span class="material-symbols-outlined" style="font-size: 18px;">sports_score</span> Encerrar Jornada e Lançar Dia
+            </button>
         </form>
     </div>
 </div>
@@ -227,8 +243,10 @@
 <!-- Histórico de Dias -->
 <div class="table-section">
     <div class="section-title">
-        <span>📅 Histórico de Dias</span>
-        <button type="button" class="btn-delete" style="font-size: 11px;" onclick="abrirModalLimparHistorico()">🗑️ Limpar Tudo</button>
+        <span style="display: flex; align-items: center; gap: 8px;"><span class="material-symbols-outlined">calendar_month</span> Histórico de Dias</span>
+        <button type="button" class="btn-delete" style="font-size: 11px; display: flex; align-items: center; gap: 4px;" onclick="abrirModalLimparHistorico()">
+            <span class="material-symbols-outlined" style="font-size: 14px;">delete_sweep</span> Limpar Tudo
+        </button>
     </div>
     
     {% for dia in historico_dias %}
@@ -240,23 +258,25 @@
             </div>
             <div class="day-summary-badges">
                 <span class="day-badge" style="border-color: rgba(239, 68, 68, 0.3);">
-                    💰 Custo: <strong style="color: var(--vermelho);">{{ dia.custo_total | moeda(jogador.moeda) }}</strong>
+                    Custo: <strong style="color: var(--vermelho);">{{ dia.custo_total | moeda(jogador.moeda) }}</strong>
                 </span>
-                <!-- O botão agora abre o modal igual ao de viagens -->
-                <button type="button" class="btn-icon-delete" title="Excluir este dia" onclick="abrirModalExcluirDia({{ dia.id }}, {{ dia.numero_dia }})">🗑️</button>
+                <button type="button" class="btn-icon-delete" title="Excluir este dia" onclick="abrirModalExcluirDia({{ dia.id }}, {{ dia.numero_dia }})">
+                    <span class="material-symbols-outlined" style="font-size: 18px; color: var(--vermelho);">delete</span>
+                </button>
             </div>
         </summary>
 
         <div style="padding: 14px; background: rgba(0,0,0,0.15);">
             <div class="log-timeline">
                 {% for ev in dia.eventos %}
-                <div class="log-card {% if ev.em_servico %}in-service{% endif %}" style="background: var(--bg-card);">
+                <!-- Mesma correção para os eventos históricos -->
+                <div class="log-card {% if ev.em_servico and ev.fase_jogador < 3 %}in-service{% endif %}" style="background: var(--bg-card);">
                     <div class="log-left">
                         <span class="log-time">{{ ev.hora }}</span>
                         <div>
                             <div>
                                 <span class="log-title">{{ ev.tipo }}</span>
-                                <span class="log-city">📍 {{ ev.cidade }}</span>
+                                <span class="log-city" style="display: inline-flex; align-items: center; gap: 2px;"><span class="material-symbols-outlined" style="font-size: 14px;">location_on</span> {{ ev.cidade }}</span>
                             </div>
                             {% if ev.observacao %}
                             <div class="log-obs">"{{ ev.observacao }}"</div>
@@ -266,8 +286,13 @@
 
                     <div class="log-right">
                         {% if ev.em_servico %}
-                            <span class="badge-status badge-service">Em Serviço</span>
-                            <span class="log-value green">{{ ev.valor | moeda(jogador.moeda) }}</span>
+                            {% if ev.fase_jogador < 3 %}
+                                <span class="badge-status badge-service">Em Serviço</span>
+                                <span class="log-value green">{{ ev.valor | moeda(jogador.moeda) }}</span>
+                            {% else %}
+                                <span class="badge-status badge-particular">Em Serviço</span>
+                                <span class="log-value red">- {{ ev.valor | moeda(jogador.moeda) }}</span>
+                            {% endif %}
                         {% elif ev.valor > 0 %}
                             <span class="badge-status badge-particular">Particular</span>
                             <span class="log-value red">- {{ ev.valor | moeda(jogador.moeda) }}</span>
@@ -290,14 +315,18 @@
         Nenhum dia finalizado no histórico até o momento.
     </p>
     {% endfor %}
+    <p style="text-align: center; color: var(--texto-mudo); font-size: 0.8em; margin-top: 14px;">
+        <i>Exibindo apenas os 7 dias mais recentes.</i>
+    </p>
 </div>
 
 <!-- Histórico de Entregas -->
 <div class="table-section">
     <div class="section-title">
-        <span>🚚 Histórico de Entregas</span>
-        <!-- Botão Limpar Viagens Igual ao de Dias -->
-        <button type="button" class="btn-delete" style="font-size: 11px;" onclick="abrirModalLimparViagens()">🗑️ Limpar Tudo</button>
+        <span style="display: flex; align-items: center; gap: 8px;"><span class="material-symbols-outlined">local_shipping</span> Histórico de Entregas</span>
+        <button type="button" class="btn-delete" style="font-size: 11px; display: flex; align-items: center; gap: 4px;" onclick="abrirModalLimparViagens()">
+            <span class="material-symbols-outlined" style="font-size: 14px;">delete_sweep</span> Limpar Tudo
+        </button>
     </div>
     <table>
         <thead>
@@ -314,7 +343,7 @@
         <tbody>
             {% for viagem in viagens %}
             <tr>
-                <td><strong>{{ viagem.origem }}</strong> → <strong>{{ viagem.destino }}</strong></td>
+                <td><strong>{{ viagem.origem }}</strong> <span class="material-symbols-outlined" style="font-size: 14px; vertical-align: middle;">arrow_right_alt</span> <strong>{{ viagem.destino }}</strong></td>
                 <td>{{ viagem.distancia_km | numero }} km</td>
                 <td>{{ viagem.frete_bruto | moeda(jogador.moeda) }}</td>
                 <td>
@@ -345,6 +374,9 @@
             {% endfor %}
         </tbody>
     </table>
+    <p style="text-align: center; color: var(--texto-mudo); font-size: 0.8em; margin-top: 14px;">
+        <i>Exibindo apenas as 7 viagens mais recentes.</i>
+    </p>
 </div>
 
 <!-- ============================================== -->
@@ -380,7 +412,7 @@
     </div>
 </div>
 
-<!-- 3. Modal Excluir 1 Dia (Novo!) -->
+<!-- 3. Modal Excluir 1 Dia -->
 <div id="modalExcluirDia" class="modal-overlay">
     <div class="modal-card">
         <h3>Estornar Dia <span id="txtNumeroDiaModal"></span>?</h3>
@@ -477,14 +509,12 @@
     /* FUNÇÕES DOS MODAIS DE CONFIRMAÇÃO         */
     /* ========================================= */
 
-    // 1. Excluir Viagem Única
     function abrirModalExcluirViagem(idViagem) {
         document.getElementById('formExcluirViagem').action = '/excluir_viagem/' + idViagem;
         document.getElementById('modalExcluirViagem').classList.add('active');
     }
     function fecharModalExcluirViagem() { document.getElementById('modalExcluirViagem').classList.remove('active'); }
 
-    // 2. Limpar TODAS as Viagens (2 Etapas)
     function abrirModalLimparViagens() {
         document.getElementById('modalLimparViagens').classList.add('active');
         document.getElementById('inputConfirmaLimpezaViagens').value = '';
@@ -503,15 +533,13 @@
         }
     });
 
-    // 3. Excluir Dia Único
     function abrirModalExcluirDia(idDia, numeroDia) {
         document.getElementById('formExcluirDia').action = '/excluir_dia/' + idDia;
-        document.getElementById('txtNumeroDiaModal').innerText = ("0" + numeroDia).slice(-2); // Coloca o 0 na frente se for < 10
+        document.getElementById('txtNumeroDiaModal').innerText = ("0" + numeroDia).slice(-2); 
         document.getElementById('modalExcluirDia').classList.add('active');
     }
     function fecharModalExcluirDia() { document.getElementById('modalExcluirDia').classList.remove('active'); }
 
-    // 4. Limpar TODOS os Dias (2 Etapas)
     function abrirModalLimparHistorico() {
         document.getElementById('modalLimparHistorico').classList.add('active');
         document.getElementById('inputConfirmaLimpeza').value = '';

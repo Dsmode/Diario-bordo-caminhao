@@ -64,6 +64,10 @@ class EventoDia(db.Model):
     valor = db.Column(db.Float, default=0.0)
     em_servico = db.Column(db.Boolean, default=False)
     observacao = db.Column(db.String(255), nullable=True)
+    
+    # NOVA COLUNA: Salva a fase do jogador no momento exato do registro
+    fase_jogador = db.Column(db.Integer, default=1) 
+    
     dia_historico_id = db.Column(db.Integer, db.ForeignKey('dia_historico.id'), nullable=True)
 
 
@@ -108,16 +112,16 @@ def obter_cargo_padrao_fase(fase):
 def dashboard():
     jogador = Jogador.query.first()
     if not jogador:
-        # CORREÇÃO: total_salarios=0.0 para não contar o valor inicial, e saldo=5000.0 como manda a regra realista!
         jogador = Jogador(nome="Carlos Oliveira", empresa_base="Swift Transportation", cidade_base="Los Angeles", fase=1, cargo="Empregado", moeda="$", saldo=5000.0, total_salarios=0.0, dias_trabalhados=1, ciclo=1)
         db.session.add(jogador)
         db.session.commit()
 
-    viagens = Viagem.query.order_by(Viagem.id.desc()).all()
+    total_comissoes = db.session.query(db.func.sum(Viagem.comissao_recebida)).scalar() or 0.0
+    viagens = Viagem.query.order_by(Viagem.id.desc()).limit(7).all()
+    historico_dias = DiaHistorico.query.order_by(DiaHistorico.id.desc()).limit(7).all()
     eventos_pendentes = EventoDia.query.filter_by(dia_historico_id=None).order_by(EventoDia.id.asc()).all()
-    historico_dias = DiaHistorico.query.order_by(DiaHistorico.id.desc()).all()
 
-    return render_template('dashboard.html', jogador=jogador, viagens=viagens, eventos_pendentes=eventos_pendentes, historico_dias=historico_dias, aba_ativa='painel')
+    return render_template('dashboard.html', jogador=jogador, viagens=viagens, total_comissoes=total_comissoes, eventos_pendentes=eventos_pendentes, historico_dias=historico_dias, aba_ativa='painel')
 
 
 @app.route('/registrar_viagem', methods=['POST'])
@@ -147,6 +151,9 @@ def registrar_viagem():
 
 @app.route('/registrar_evento', methods=['POST'])
 def registrar_evento():
+    jogador = Jogador.query.first()
+    fase_atual = jogador.fase if jogador else 1
+
     novo_evento = EventoDia(
         hora=request.form.get('hora'),
         tipo=request.form.get('tipo'),
@@ -154,6 +161,7 @@ def registrar_evento():
         valor=parse_br_float(request.form.get('valor')),
         em_servico=True if request.form.get('em_servico') == 'on' else False,
         observacao=request.form.get('observacao'),
+        fase_jogador=fase_atual, # Salva a fase congelada
         dia_historico_id=None
     )
     db.session.add(novo_evento)
@@ -179,7 +187,8 @@ def lancar_dia():
     eventos_pendentes = EventoDia.query.filter_by(dia_historico_id=None).all()
     if not jogador: return redirect(url_for('dashboard'))
 
-    custo_dia = sum(ev.valor for ev in eventos_pendentes if (jogador.fase >= 3) or (not ev.em_servico))
+    # Usa a fase gravada no evento (ev.fase_jogador) e não a fase atual do jogador (jogador.fase)
+    custo_dia = sum(ev.valor for ev in eventos_pendentes if (ev.fase_jogador >= 3) or (not ev.em_servico))
     jogador.saldo -= custo_dia
 
     novo_dia = DiaHistorico(numero_dia=jogador.dias_trabalhados, ciclo=jogador.ciclo, situacao="Tranquilo", chuva="Sem chuva", custo_total=custo_dia)
@@ -217,7 +226,7 @@ def limpar_viagens():
     jogador = Jogador.query.first()
     if jogador:
         for viagem in viagens:
-            jogador.saldo -= viagem.comissao_recebida  # Estorna as comissões no saldo
+            jogador.saldo -= viagem.comissao_recebida
             db.session.delete(viagem)
         db.session.commit()
     return redirect(url_for('dashboard'))

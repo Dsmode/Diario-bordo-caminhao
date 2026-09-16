@@ -4,26 +4,31 @@
     <meta charset="UTF-8">
     <title>{% block title %}Diário de Bordo{% endblock %}</title>
     
-    <!-- É ESTA LINHA AQUI QUE PUXA O CSS DO FLASK -->
+    <!-- Link para os ícones profissionais do Google Material -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+    
+    <!-- Link do seu CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     
     {% block head %}{% endblock %}
 </head>
 <body>
-    <!-- BARRA NAVEGAÇÃO SUPERIOR -->
     <header class="top-navbar">
         <div class="safety-stripe"></div>
         <div class="navbar-content">
             <div class="brand-logo">Diário de Bordo</div>
             <nav class="nav-menu">
-                <a href="/" class="nav-item {% if aba_ativa == 'painel' %}active{% endif %}">📊 Painel</a>
-                <a href="/opcoes" class="nav-item {% if aba_ativa == 'opcoes' %}active{% endif %}">⚙️ Opções</a>
+                <a href="/" class="nav-item {% if aba_ativa == 'painel' %}active{% endif %}" style="display: flex; align-items: center; gap: 6px;">
+                    <span class="material-symbols-outlined" style="font-size: 18px;">dashboard</span> Painel
+                </a>
+                <a href="/opcoes" class="nav-item {% if aba_ativa == 'opcoes' %}active{% endif %}" style="display: flex; align-items: center; gap: 6px;">
+                    <span class="material-symbols-outlined" style="font-size: 18px;">settings</span> Opções
+                </a>
             </nav>
         </div>
     </header>
 
     <div class="container">
-        <!-- O conteúdo de dashboard.html e opcoes.html entra aqui -->
         {% block content %}{% endblock %}
     </div>
 

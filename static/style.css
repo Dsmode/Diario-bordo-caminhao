@@ -611,3 +611,18 @@ th { background: var(--bg-input); color: var(--texto-mudo); font-weight: 600; }
 }
 
 .btn-modal-confirmar:hover { background: var(--vermelho-hover); }
+
+/* ALINHAMENTO DE ÍCONES DO GOOGLE */
+.material-symbols-outlined {
+    vertical-align: middle;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Um botão menorzinho para os ícones de lixeira nas tabelas */
+.btn-icon-delete {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
