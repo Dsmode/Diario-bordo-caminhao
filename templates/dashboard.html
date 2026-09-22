@@ -41,24 +41,37 @@
         </div>
     </div>
 
-    <div class="card">
-        <form action="/avancar_dia" method="POST" style="margin: 0;">
-            <button type="submit" class="btn-test" title="Clique para simular a passagem de 1 dia">
-                <span class="material-symbols-outlined" style="font-size: 14px; margin-right: 4px;">science</span> +1 Dia (Teste)
-            </button>
-        </form>
-
-        <h3>DIAS TRABALHADOS</h3>
+    <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+        <h3 style="margin-bottom: 10px;">DIAS TRABALHADOS</h3>
+        
         {% set ciclo_atual = jogador.ciclo if jogador.ciclo is defined else 1 %}
         {% set dias_totais = jogador.dias_no_mes %}
         {% set dias_atuais = jogador.dias_trabalhados if jogador.dias_trabalhados is defined else 1 %}
         {% set dias_restantes = dias_totais - dias_atuais %}
         
-        <div class="value" style="color: var(--dourado);">
-            {{ "%02d"|format(dias_atuais) }}/{{ dias_totais }}
+        <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-input); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--borda);">
+            <!-- Botão de Voltar -->
+            <form action="/voltar_dia" method="POST" style="margin: 0;">
+                <button type="submit" title="Voltar 1 Dia" style="background: transparent; border: none; color: var(--texto-mudo); cursor: pointer; display: flex; align-items: center; padding: 0;">
+                    <span class="material-symbols-outlined" style="font-size: 24px;">chevron_left</span>
+                </button>
+            </form>
+            
+            <!-- Contador Central -->
+            <div class="value" style="color: var(--dourado); font-size: 1.5em; margin: 0;">
+                {{ "%02d"|format(dias_atuais) }}<span style="font-size: 0.6em; color: var(--texto-mudo);">/{{ dias_totais }}</span>
+            </div>
+            
+            <!-- Botão de Avançar -->
+            <form action="/avancar_dia" method="POST" style="margin: 0;">
+                <button type="submit" title="Avançar 1 Dia" style="background: transparent; border: none; color: var(--texto-claro); cursor: pointer; display: flex; align-items: center; padding: 0;">
+                    <span class="material-symbols-outlined" style="font-size: 24px;">chevron_right</span>
+                </button>
+            </form>
         </div>
-        <div class="subtext">
-            Faltam {{ dias_restantes }} dias para o pagamento • Ciclo {{ ciclo_atual }}
+
+        <div class="subtext" style="margin-top: 10px; text-align: center;">
+            Faltam {{ dias_restantes }} dias para o salário • Ciclo {{ ciclo_atual }}
         </div>
     </div>
 </div>
