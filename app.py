@@ -1,4 +1,5 @@
 import os
+import json
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
 
@@ -145,6 +146,66 @@ def calculadora():
     jogador = Jogador.query.first()
     if not jogador: return redirect(url_for('dashboard'))
     return render_template('calculadora.html', jogador=jogador, aba_ativa='calculadora')
+
+@app.route('/estatisticas')
+def estatisticas():
+    jogador = Jogador.query.first()
+    if not jogador: return redirect(url_for('dashboard'))
+
+    # 1. Dados para os KPIs Superiores
+    viagens = Viagem.query.all()
+    total_km = sum(v.distancia_km for v in viagens)
+    total_comissao = sum(v.comissao_recebida for v in viagens)
+    lucro_por_km = (total_comissao / total_km) if total_km > 0 else 0
+    maior_frete = max(viagens, key=lambda v: v.comissao_recebida) if viagens else None
+
+    # Custo da Desatenção (Multas + Acidentes + Avarias)
+    eventos_pagos = EventoDia.query.filter(db.or_(EventoDia.fase_jogador >= 3, EventoDia.em_servico == False)).all()
+    custo_eventos_ruins = sum(ev.valor for ev in eventos_pagos if ev.tipo in ['Multa', 'Acidente'])
+    custo_avarias = sum(v.frete_bruto * (v.avaria_pct / 100.0) for v in viagens)
+    custo_desatencao = custo_eventos_ruins + custo_avarias
+
+    # 2. Dados Gráfico: Para onde vai meu dinheiro (Rosca)
+    despesas_agrupadas = {}
+    for ev in eventos_pagos:
+        if ev.valor > 0:
+            despesas_agrupadas[ev.tipo] = despesas_agrupadas.get(ev.tipo, 0) + ev.valor
+
+    # 3. Dados Gráfico: Últimos 7 Fretes (Ajustado o limite e a label com as cidades)
+    ultimas_viagens = Viagem.query.order_by(Viagem.id.desc()).limit(7).all()
+    ultimas_viagens.reverse() # Coloca em ordem cronológica p/ o gráfico
+    # Usamos o símbolo unicode ➔ para que o Chart.js consiga renderizar no texto do eixo X
+    fretes_labels = [f"{v.origem} ➔ {v.destino}" for v in ultimas_viagens]
+    fretes_valores = [v.comissao_recebida for v in ultimas_viagens]
+
+    # 4. Dados Gráfico: Custos Diários (Agora ordenado pelo Ciclo e Dia!)
+    ultimos_dias = DiaHistorico.query.order_by(
+        DiaHistorico.ciclo.desc(), 
+        DiaHistorico.numero_dia.desc(), 
+        DiaHistorico.id.desc()
+    ).limit(10).all()
+    ultimos_dias.reverse() # Inverte para o gráfico desenhar do mais antigo(esq) para o mais novo(dir)
+    dias_labels = [f"Dia {d.numero_dia}" for d in ultimos_dias]
+    dias_custos = [d.custo_total for d in ultimos_dias]
+
+    # Empacota tudo pra mandar pro HTML
+    dados_graficos = {
+        'despesas_labels': list(despesas_agrupadas.keys()),
+        'despesas_valores': list(despesas_agrupadas.values()),
+        'fretes_labels': fretes_labels,
+        'fretes_valores': fretes_valores,
+        'dias_labels': dias_labels,
+        'dias_custos': dias_custos
+    }
+
+    return render_template('estatisticas.html', 
+                           jogador=jogador, 
+                           aba_ativa='estatisticas',
+                           total_km=total_km,
+                           lucro_por_km=lucro_por_km,
+                           custo_desatencao=custo_desatencao,
+                           maior_frete=maior_frete,
+                           dados_graficos=json.dumps(dados_graficos))
 
 @app.route('/comprar_passagem', methods=['POST'])
 def comprar_passagem():

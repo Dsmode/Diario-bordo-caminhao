@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+
+{% block title %}Diário de Bordo - Estatísticas{% endblock %}
+
+{% block head %}
+<!-- Biblioteca Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .grafico-container { background: var(--bg-card); padding: 20px; border-radius: 10px; border: 1px solid var(--borda); margin-bottom: 20px;}
+    .grafico-titulo { font-size: 1.1em; color: var(--dourado); margin-bottom: 15px; font-weight: bold; border-bottom: 1px solid var(--borda); padding-bottom: 10px; display: flex; align-items: center; gap: 8px;}
+    .grid-graficos { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    @media (max-width: 800px) { .grid-graficos { grid-template-columns: 1fr; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="header-profile" style="margin-bottom: 20px;">
+    <div>
+        <h2>Relatórios de Inteligência</h2>
+        <small>Métricas detalhadas sobre o desempenho da sua carreira.</small>
+    </div>
+    <div><span class="material-symbols-outlined" style="font-size: 36px; color: var(--dourado);">monitoring</span></div>
+</div>
+
+<!-- KPIs (Cartões Superiores) -->
+<div class="cards" style="margin-bottom: 24px;">
+    <div class="card">
+        <h3>LUCRO MÉDIO (POR KM)</h3>
+        <div class="value" style="color: var(--dourado);">{{ lucro_por_km | moeda(jogador.moeda) }}</div>
+        <div class="subtext">O quanto cada KM te rende líquido</div>
+    </div>
+    <div class="card">
+        <h3>TOTAL RODADO</h3>
+        <div class="value" style="color: var(--texto-claro);">{{ total_km | numero }} <span style="font-size: 0.6em;">km</span></div>
+        <div class="subtext">Soma de todas as rotas registradas</div>
+    </div>
+    <div class="card" style="border-top: 3px solid var(--vermelho);">
+        <h3 style="color: var(--vermelho);">CUSTO DA DESATENÇÃO</h3>
+        <div class="value" style="color: var(--vermelho);">{{ custo_desatencao | moeda(jogador.moeda) }}</div>
+        <div class="subtext">Soma de Multas, Acidentes e Avarias</div>
+    </div>
+    <div class="card">
+        <h3>MAIOR FRETE REALIZADO</h3>
+        <div class="value" style="color: var(--dourado); font-size: 1.2em;">
+            {% if maior_frete %} {{ maior_frete.comissao_recebida | moeda(jogador.moeda) }} {% else %} --- {% endif %}
+        </div>
+        <div class="subtext">
+            {% if maior_frete %} De {{ maior_frete.origem }} p/ {{ maior_frete.destino }} {% else %} Nenhuma entrega {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Seção de Gráficos -->
+<div class="grafico-container">
+    <div class="grafico-titulo"><span class="material-symbols-outlined">timeline</span> Histórico de Despesas Diárias</div>
+    <div style="position: relative; height: 300px; width: 100%;">
+        <canvas id="graficoDias"></canvas>
+    </div>
+</div>
+
+<div class="grid-graficos">
+    <div class="grafico-container">
+        <div class="grafico-titulo"><span class="material-symbols-outlined">pie_chart</span> Para onde vai meu dinheiro?</div>
+        <div style="position: relative; height: 300px; width: 100%; display: flex; justify-content: center;">
+            <canvas id="graficoDespesas"></canvas>
+        </div>
+    </div>
+
+    <div class="grafico-container">
+        <div class="grafico-titulo"><span class="material-symbols-outlined">bar_chart</span> Últimos 7 Fretes (Recebimentos)</div>
+        <div style="position: relative; height: 300px; width: 100%;">
+            <canvas id="graficoFretes"></canvas>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Configuração global para o estilo escuro (Dark Mode)
+    Chart.defaults.color = '#9ca3af'; // Cor do texto
+    Chart.defaults.borderColor = 'rgba(255, 255, 255, 0.05)'; // Cor das linhas de grade
+    
+    // Recebe os dados processados do Python
+    const dados = {{ dados_graficos | safe }};
+    const SIMBOLO_MOEDA = "{{ jogador.moeda }}";
+
+    // Formatador de Moeda para os popups (Tooltips) dos gráficos
+    const tooltipMoeda = {
+        callbacks: {
+            label: function(context) {
+                let valor = context.raw || 0;
+                return SIMBOLO_MOEDA + ' ' + valor.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            }
+        }
+    };
+
+    // 1. Gráfico de Custos Diários (Linha)
+    new Chart(document.getElementById('graficoDias'), {
+        type: 'line',
+        data: {
+            labels: dados.dias_labels,
+            datasets: [{
+                label: 'Custo Total do Dia',
+                data: dados.dias_custos,
+                borderColor: '#ef4444',
+                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                borderWidth: 2,
+                tension: 0.3, // Deixa a linha curvada e elegante
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { tooltip: tooltipMoeda, legend: { display: false } }
+        }
+    });
+
+    // 2. Gráfico de Despesas (Rosca/Doughnut)
+    new Chart(document.getElementById('graficoDespesas'), {
+        type: 'doughnut',
+        data: {
+            labels: dados.despesas_labels,
+            datasets: [{
+                data: dados.despesas_valores,
+                backgroundColor: ['#eab308', '#ef4444', '#3b82f6', '#10b981', '#8b5cf6', '#f97316'],
+                borderWidth: 1,
+                borderColor: '#1f2127'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { tooltip: tooltipMoeda, legend: { position: 'right' } }
+        }
+    });
+
+    // 3. Gráfico de Últimos Fretes (Barras)
+    new Chart(document.getElementById('graficoFretes'), {
+        type: 'bar',
+        data: {
+            labels: dados.fretes_labels,
+            datasets: [{
+                label: 'Valor Recebido',
+                data: dados.fretes_valores,
+                backgroundColor: '#eab308',
+                borderRadius: 4 // Deixa a borda da barra arredondada
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { tooltip: tooltipMoeda, legend: { display: false } },
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+</script>
+{% endblock %}
