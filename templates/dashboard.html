@@ -7,7 +7,7 @@
 <div class="header-profile">
     <div>
         <h2>{{ jogador.nome }}</h2>
-        <small>Base: {{ jogador.empresa_base }} ({{ jogador.cidade_base }})</small>
+        <small>Empresa: {{ jogador.empresa_base }} | Cidade-Base: {{ jogador.cidade_base }}</small>
     </div>
     <div>
         <span style="background: #282a30; padding: 5px 12px; border-radius: 20px; border: 1px solid var(--borda); font-size: 0.85em;">
@@ -51,8 +51,9 @@
         
         <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-input); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--borda);">
             <!-- Botão de Voltar -->
-            <form action="/voltar_dia" method="POST" style="margin: 0;">
-                <button type="submit" title="Voltar 1 Dia" style="background: transparent; border: none; color: var(--texto-mudo); cursor: pointer; display: flex; align-items: center; padding: 0;">
+            <form action="/voltar_dia" method="POST" id="formVoltarDia" style="margin: 0;">
+                <input type="hidden" name="nao_perguntar_mais" id="inputNaoPerguntarMais" value="off">
+                <button type="button" onclick="tentarVoltarDia()" title="Voltar 1 Dia" style="background: transparent; border: none; color: var(--texto-mudo); cursor: pointer; display: flex; align-items: center; padding: 0;">
                     <span class="material-symbols-outlined" style="font-size: 24px;">chevron_left</span>
                 </button>
             </form>
@@ -243,12 +244,26 @@
                 Nenhum ocorrido registrado para o dia de hoje.
             </div>
             {% endfor %}
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; border-top: 1px solid var(--borda); padding-top: 15px;">
+                <form action="/lancar_fds" method="POST" style="margin: 0;">
+                    <button type="submit" title="Avança 2 dias inativos cobrando custos de hotel e comida" style="width: 100%; background: transparent; border: 1px solid #3b82f6; color: #3b82f6; padding: 10px; border-radius: 6px; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 6px; font-weight: bold; transition: 0.2s;">
+                        <span class="material-symbols-outlined" style="font-size: 18px;">weekend</span> Fim de Semana
+                    </button>
+                </form>
+                <form action="/caminhao_tombado" method="POST" id="formAcidente" style="margin: 0;">
+                    <button type="button" onclick="abrirModalAcidente()" style="width: 100%; background: transparent; border: 1px solid var(--vermelho); color: var(--vermelho); padding: 10px; border-radius: 6px; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 6px; font-weight: bold; transition: 0.2s;">
+                        <span class="material-symbols-outlined" style="font-size: 18px;">car_crash</span> Acidente Grave
+                    </button>
+                </form>
+            </div>
         </div>
 
         <form action="/lancar_dia" method="POST" id="formLancarDia" style="{% if not eventos_pendentes %}display: none;{% endif %}">
             <button type="submit" class="btn-lancar-dia">
                 <span class="material-symbols-outlined" style="font-size: 18px;">sports_score</span> Encerrar Jornada e Lançar Dia
             </button>
+            <div style="display: flex; gap: 10px; margin-top: 15px; border-top: 1px solid var(--borda); padding-top: 15px;">
+        </div>
         </form>
     </div>
 </div>
@@ -453,6 +468,43 @@
         </div>
     </div>
 </div>
+
+<!-- 5. Modal Confirmar Voltar Dia -->
+<div id="modalVoltarDia" class="modal-overlay">
+    <div class="modal-card">
+        <h3>Voltar no Tempo?</h3>
+        <p>Tem certeza que deseja recuar um dia? Os eventos não encerrados voltarão para a tela inicial e os custos do dia serão estornados.</p>
+        
+        <div class="custom-checkbox-container" style="margin: 15px 0;">
+            <label class="custom-checkbox" style="font-size: 0.9em; color: var(--texto-mudo);">
+                <input type="checkbox" id="chkNaoPerguntarMais">
+                <span class="checkmark"></span>
+                Não perguntar novamente
+            </label>
+        </div>
+
+        <div class="modal-actions">
+            <button type="button" class="btn-modal-cancelar" onclick="fecharModalVoltarDia()">Cancelar</button>
+            <button type="button" class="btn-modal-confirmar" onclick="confirmarVoltarDiaExecutar()">Confirmar</button>
+        </div>
+    </div>
+</div>
+
+<!-- 6. Modal Confirmar Acidente Grave -->
+<div id="modalAcidente" class="modal-overlay">
+    <div class="modal-card">
+        <h3 style="color: var(--vermelho); display: flex; align-items: center; gap: 8px;">
+            <span class="material-symbols-outlined">car_crash</span> Acidente Grave!
+        </h3>
+        <p>Seu motorista será demitido, <strong>a empresa atual será bloqueada por 30 dias</strong>, e você passará <strong>10 DIAS inativo</strong> pagando todos os custos de alimentação e hotel.</p>
+        <p style="margin-top: 10px;">Deseja assumir o prejuízo e continuar?</p>
+        
+        <div class="modal-actions" style="margin-top: 25px;">
+            <button type="button" class="btn-modal-cancelar" onclick="fecharModalAcidente()">Cancelar</button>
+            <button type="button" class="btn-modal-confirmar" style="background: var(--vermelho); color: white;" onclick="confirmarAcidente()">Sim, Tombei o Caminhão</button>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
@@ -570,6 +622,32 @@
             btn.disabled = true; btn.style.opacity = '0.4'; btn.style.cursor = 'not-allowed';
         }
     });
+
+    const PEDE_CONFIRMACAO_VOLTAR = {{ 'true' if jogador.confirmar_voltar_dia else 'false' }};
+
+    function tentarVoltarDia() {
+        if (PEDE_CONFIRMACAO_VOLTAR) {
+            document.getElementById('modalVoltarDia').classList.add('active');
+        } else {
+            document.getElementById('formVoltarDia').submit();
+        }
+    }
+
+    function fecharModalVoltarDia() {
+        document.getElementById('modalVoltarDia').classList.remove('active');
+    }
+
+    function confirmarVoltarDiaExecutar() {
+        const chk = document.getElementById('chkNaoPerguntarMais');
+        if (chk && chk.checked) {
+            document.getElementById('inputNaoPerguntarMais').value = 'on';
+        }
+        document.getElementById('formVoltarDia').submit();
+    }
+
+    function abrirModalAcidente() { document.getElementById('modalAcidente').classList.add('active'); }
+    function fecharModalAcidente() { document.getElementById('modalAcidente').classList.remove('active'); }
+    function confirmarAcidente() { document.getElementById('formAcidente').submit(); }
 
     /* ========================================= */
     /* LOGICA AJAX E SCROLL FIX                  */

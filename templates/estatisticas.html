@@ -52,7 +52,7 @@
 
 <!-- Seção de Gráficos -->
 <div class="grafico-container">
-    <div class="grafico-titulo"><span class="material-symbols-outlined">timeline</span> Histórico de Despesas Diárias</div>
+    <div class="grafico-titulo"><span class="material-symbols-outlined">timeline</span> Histórico Financeiro Diário</div>
     <div style="position: relative; height: 300px; width: 100%;">
         <canvas id="graficoDias"></canvas>
     </div>
@@ -85,7 +85,7 @@
     const dados = {{ dados_graficos | safe }};
     const SIMBOLO_MOEDA = "{{ jogador.moeda }}";
 
-    // Formatador de Moeda para os popups (Tooltips) dos gráficos
+    // Formatador de Moeda para os popups
     const tooltipMoeda = {
         callbacks: {
             label: function(context) {
@@ -95,29 +95,46 @@
         }
     };
 
-    // 1. Gráfico de Custos Diários (Linha)
+    // 1. Gráfico Financeiro Diário (DUAS LINHAS: Ganhos e Custos)
     new Chart(document.getElementById('graficoDias'), {
         type: 'line',
         data: {
             labels: dados.dias_labels,
-            datasets: [{
-                label: 'Custo Total do Dia',
-                data: dados.dias_custos,
-                borderColor: '#ef4444',
-                backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                borderWidth: 2,
-                tension: 0.3, // Deixa a linha curvada e elegante
-                fill: true
-            }]
+            datasets: [
+                {
+                    label: 'Ganhos do Dia (Receitas)',
+                    data: dados.dias_ganhos,
+                    borderColor: '#eab308', // Dourado/Amarelo
+                    backgroundColor: 'rgba(234, 179, 8, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: true
+                },
+                {
+                    label: 'Custos do Dia (Despesas)',
+                    data: dados.dias_custos,
+                    borderColor: '#ef4444', // Vermelho
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.3,
+                    fill: true
+                }
+            ]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { tooltip: tooltipMoeda, legend: { display: false } }
+            plugins: { tooltip: tooltipMoeda, legend: { position: 'top' } },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    min: 0 // TRAVA O GRÁFICO PARA NUNCA FICAR NEGATIVO
+                }
+            }
         }
     });
 
-    // 2. Gráfico de Despesas (Rosca/Doughnut)
+    // 2. Gráfico de Despesas (Rosca)
     new Chart(document.getElementById('graficoDespesas'), {
         type: 'doughnut',
         data: {
@@ -145,7 +162,7 @@
                 label: 'Valor Recebido',
                 data: dados.fretes_valores,
                 backgroundColor: '#eab308',
-                borderRadius: 4 // Deixa a borda da barra arredondada
+                borderRadius: 4
             }]
         },
         options: {

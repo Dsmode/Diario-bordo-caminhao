@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block title %}Diário de Bordo - Minha Empresa{% endblock %}
+
+{% block content %}
+<div class="header-profile" style="margin-bottom: 24px;">
+    <div>
+        <h2>Gestão da Empresa</h2>
+        <small>Informações do seu empregador ou da sua própria transportadora</small>
+    </div>
+    <div>
+        <span class="material-symbols-outlined" style="font-size: 36px; color: var(--dourado);">corporate_fare</span>
+    </div>
+</div>
+
+<!-- Lógica para o aviso de Empresa Bloqueada (30 dias) -->
+{% if jogador.empresa_bloqueada and jogador.dia_global_desbloqueio and jogador.dias_globais < jogador.dia_global_desbloqueio %}
+    {% set dias_restantes = jogador.dia_global_desbloqueio - jogador.dias_globais %}
+    <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid var(--vermelho); padding: 15px; border-radius: 8px; margin-bottom: 20px; color: var(--texto-claro); display: flex; align-items: center; gap: 15px;">
+        <span class="material-symbols-outlined" style="font-size: 36px; color: var(--vermelho);">block</span>
+        <div>
+            <strong style="font-size: 1.1em; color: var(--vermelho);">Bloqueio Ativo: {{ jogador.empresa_bloqueada }}</strong><br>
+            <span style="font-size: 0.9em;">Você foi demitido recentemente e não pode voltar para esta transportadora pelos próximos <strong>{{ dias_restantes }} dias</strong>.</span>
+        </div>
+    </div>
+{% endif %}
+
+<!-- Alerta Vermelho caso esteja desempregado (sem bloquear tudo) -->
+{% if jogador.empresa_base == 'Desempregado' %}
+<div style="background: rgba(239, 68, 68, 0.1); border: 1px dashed var(--vermelho); padding: 15px; border-radius: 8px; margin-bottom: 20px; color: var(--texto-claro); display: flex; align-items: center; gap: 15px;">
+    <span class="material-symbols-outlined" style="font-size: 36px; color: var(--vermelho);">warning</span>
+    <div>
+        <strong style="font-size: 1.1em; color: var(--vermelho);">Você está sem caminhão e sem empresa!</strong><br>
+        <span style="font-size: 0.9em;">Busque um novo emprego (que não seja a bloqueada) e digite abaixo para voltar à ativa.</span>
+    </div>
+</div>
+{% endif %}
+
+<form action="/salvar_empresa" method="POST">
+    <div class="form-section" style="margin-bottom: 20px;">
+        <div class="section-title">
+            <span style="display: flex; align-items: center; gap: 8px;">
+                <span class="material-symbols-outlined">work</span> Vínculo Empregatício Atual
+            </span>
+        </div>
+        
+        <div class="form-grid">
+            <div class="form-group">
+                <label>Transportadora (Empregador)</label>
+                <div style="position: relative; display: flex; align-items: center;">
+                    <span class="material-symbols-outlined" style="position: absolute; left: 12px; color: var(--texto-mudo); font-size: 18px;">domain</span>
+                    <input type="text" name="empresa_base" value="{{ jogador.empresa_base }}" required style="padding-left: 38px; width: 100%;">
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Cidade Sede da Garagem</label>
+                <div style="position: relative; display: flex; align-items: center;">
+                    <span class="material-symbols-outlined" style="position: absolute; left: 12px; color: var(--texto-mudo); font-size: 18px;">location_city</span>
+                    <input type="text" name="cidade_base" value="{{ jogador.cidade_base }}" required style="padding-left: 38px; width: 100%;">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botão de Salvar muito mais simples, integrado e elegante -->
+    <button type="submit" class="btn-submit" style="width: 100%; display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 10px;">
+        <span class="material-symbols-outlined">save</span> Atualizar Vínculo e Voltar ao Painel
+    </button>
+</form>
+{% endblock %}

@@ -3,47 +3,80 @@
 {% block title %}Diário de Bordo - Opções{% endblock %}
 
 {% block content %}
-<div class="form-section">
-    <h3 class="section-title">Configurações do Perfil & Moeda</h3>
-    <form action="/salvar_opcoes" method="POST">
+<div class="header-profile" style="margin-bottom: 24px;">
+    <div>
+        <h2>Opções do Sistema</h2>
+        <small>Gerencie os parâmetros da sua Carreira Realista e preferências do aplicativo</small>
+    </div>
+    <div>
+        <span class="material-symbols-outlined" style="font-size: 36px; color: var(--dourado);">settings_suggest</span>
+    </div>
+</div>
+
+<form action="/salvar_opcoes" method="POST">
+    
+    <!-- BLOCO 1: Perfil e Carreira -->
+    <div class="form-section" style="margin-bottom: 20px;">
+        <div class="section-title">
+            <span style="display: flex; align-items: center; gap: 8px;">
+                <span class="material-symbols-outlined">badge</span> Perfil e Carreira
+            </span>
+        </div>
         <div class="form-grid">
             <div class="form-group">
                 <label>Nome do Motorista</label>
-                <!-- O valor padrão virá do banco de dados -->
-                <input type="text" name="nome" value="{{ jogador.nome }}" required>
+                <div style="position: relative; display: flex; align-items: center;">
+                    <span class="material-symbols-outlined" style="position: absolute; left: 12px; color: var(--texto-mudo); font-size: 18px;">person</span>
+                    <input type="text" name="nome" value="{{ jogador.nome }}" required style="padding-left: 38px; width: 100%;">
+                </div>
             </div>
-
             <div class="form-group">
-                <label>Empresa Empregadora</label>
-                <input type="text" name="empresa_base" value="{{ jogador.empresa_base }}" required>
-            </div>
-
-            <div class="form-group">
-                <label>Cidade Base</label>
-                <input type="text" name="cidade_base" value="{{ jogador.cidade_base }}" required>
-            </div>
-
-            <div class="form-group">
-                <label>Fase Atual & Cargo</label>
+                <label>Fase Atual</label>
                 <select name="fase">
-                    <option value="1" {% if jogador.fase == 1 %}selected{% endif %}>Fase 1 - Empregado</option>
-                    <option value="2" {% if jogador.fase == 2 %}selected{% endif %}>Fase 2 - Agregado</option>
-                    <option value="3" {% if jogador.fase == 3 %}selected{% endif %}>Fase 3 - Autônomo</option>
-                    <option value="4" {% if jogador.fase == 4 %}selected{% endif %}>Fase 4 - Empresário</option>
-                </select>
-            </div>
-
-            <div class="form-group">
-                <label>Moeda Exibida no Sistema</label>
-                <select name="moeda">
-                    <option value="R$" {% if jogador.moeda == 'R$' %}selected{% endif %}>Reais (R$)</option>
-                    <option value="$" {% if jogador.moeda == '$' or not jogador.moeda %}selected{% endif %}>Dólares ($)</option>
-                    <option value="€" {% if jogador.moeda == '€' %}selected{% endif %}>Euros (€)</option>
+                    <option value="1" {% if jogador.fase == 1 %}selected{% endif %}>Fase 1 - Empregado (Comissão 5%)</option>
+                    <option value="2" {% if jogador.fase == 2 %}selected{% endif %}>Fase 2 - Agregado (Comissão 10%)</option>
+                    <option value="3" {% if jogador.fase == 3 %}selected{% endif %}>Fase 3 - Autônomo (Comissão 20%)</option>
+                    <option value="4" {% if jogador.fase == 4 %}selected{% endif %}>Fase 4 - Empresário (Comissão 20% + Frota)</option>
+                    <option value="5" {% if jogador.fase == 5 %}selected{% endif %}>Fase 5 - Magnata (Sede Gigante)</option>
                 </select>
             </div>
         </div>
+    </div>
 
-        <button type="submit" class="btn-submit">Salvar Configurações</button>
-    </form>
-</div>
+    <!-- BLOCO 3: Preferências do Sistema -->
+    <div class="form-section" style="margin-bottom: 24px;">
+        <div class="section-title">
+            <span style="display: flex; align-items: center; gap: 8px;">
+                <span class="material-symbols-outlined">display_settings</span> Preferências do Sistema
+            </span>
+        </div>
+        <div class="form-group" style="margin-top: 10px; padding: 10px 15px; background: rgba(0,0,0,0.2); border-radius: 8px; border: 1px solid var(--borda);">
+            <div class="custom-checkbox-container">
+                <label class="custom-checkbox" style="font-weight: bold; color: var(--texto-claro);">
+                    <input type="checkbox" name="confirmar_voltar_dia" {% if jogador.confirmar_voltar_dia %}checked{% endif %}>
+                    <span class="checkmark"></span>
+                    Exibir confirmação ao "Voltar Dia"
+                </label>
+            </div>
+            <p style="color: var(--texto-mudo); font-size: 0.85em; margin-top: 8px; margin-left: 28px; line-height: 1.4;">
+                Se ativado, o painel perguntará se você tem certeza antes de voltar no tempo. Se desativado, o botão apagará o dia e estornará os custos instantaneamente.
+            </p>
+        </div>
+        <br>
+        <div class="form-group full-width">
+                <label>Moeda do Jogo</label>
+                <select name="moeda">
+                    <option value="$" {% if jogador.moeda == '$' %}selected{% endif %}>Dólar Americano ($) - ATS</option>
+                    <option value="€" {% if jogador.moeda == '€' %}selected{% endif %}>Euro (€) - ETS2</option>
+                    <option value="R$" {% if jogador.moeda == 'R$' %}selected{% endif %}>Real Brasileiro (R$)</option>
+                </select>
+            </div>
+    </div>
+
+    <!-- Botão Salvar Maior e Destacado -->
+    <button type="submit" class="btn-submit" style="display: flex; justify-content: center; align-items: center; gap: 8px; font-size: 1.1em; padding: 14px; text-transform: uppercase; letter-spacing: 1px;">
+        <span class="material-symbols-outlined">save</span> Salvar Alterações
+    </button>
+
+</form>
 {% endblock %}
