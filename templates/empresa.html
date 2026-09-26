@@ -5,8 +5,8 @@
 {% block content %}
 <div class="header-profile" style="margin-bottom: 24px;">
     <div>
-        <h2>Gestão da Empresa</h2>
-        <small>Informações do seu empregador ou da sua própria transportadora</small>
+        <h2 style="font-family: 'Oswald', sans-serif;">Gestão de Empresa</h2>
+        <small>Gestão de vínculos corporativos, transferências e contratos</small>
     </div>
     <div>
         <span class="material-symbols-outlined" style="font-size: 36px; color: var(--dourado);">corporate_fare</span>
@@ -19,53 +19,156 @@
     <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid var(--vermelho); padding: 15px; border-radius: 8px; margin-bottom: 20px; color: var(--texto-claro); display: flex; align-items: center; gap: 15px;">
         <span class="material-symbols-outlined" style="font-size: 36px; color: var(--vermelho);">block</span>
         <div>
-            <strong style="font-size: 1.1em; color: var(--vermelho);">Bloqueio Ativo: {{ jogador.empresa_bloqueada }}</strong><br>
-            <span style="font-size: 0.9em;">Você foi demitido recentemente e não pode voltar para esta transportadora pelos próximos <strong>{{ dias_restantes }} dias</strong>.</span>
+            <strong style="font-size: 1.1em; color: var(--vermelho); font-family: 'Oswald', sans-serif;">Bloqueio Ativo: {{ jogador.empresa_bloqueada }}</strong><br>
+            <span style="font-size: 0.9em;">Foi despedido por justa causa e não pode voltar para esta transportadora pelos próximos <strong>{{ dias_restantes }} dias</strong>.</span>
         </div>
     </div>
 {% endif %}
 
-<!-- Alerta Vermelho caso esteja desempregado (sem bloquear tudo) -->
-{% if jogador.empresa_base == 'Desempregado' %}
-<div style="background: rgba(239, 68, 68, 0.1); border: 1px dashed var(--vermelho); padding: 15px; border-radius: 8px; margin-bottom: 20px; color: var(--texto-claro); display: flex; align-items: center; gap: 15px;">
-    <span class="material-symbols-outlined" style="font-size: 36px; color: var(--vermelho);">warning</span>
-    <div>
-        <strong style="font-size: 1.1em; color: var(--vermelho);">Você está sem caminhão e sem empresa!</strong><br>
-        <span style="font-size: 0.9em;">Busque um novo emprego (que não seja a bloqueada) e digite abaixo para voltar à ativa.</span>
-    </div>
-</div>
-{% endif %}
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 20px; margin-bottom: 20px; align-items: start;">
+    
+    <!-- BLOCO 1: Situação Contratual -->
+    <div class="form-section" style="margin-bottom: 0;">
+        <h3 class="section-title" style="font-weight: bold; font-family: 'Oswald', sans-serif;">
+            <span style="display: flex; align-items: center; gap: 8px;"><span class="material-symbols-outlined">work</span> Vínculo Atual</span>
+        </h3>
 
-<form action="/salvar_empresa" method="POST">
-    <div class="form-section" style="margin-bottom: 20px;">
-        <div class="section-title">
-            <span style="display: flex; align-items: center; gap: 8px;">
-                <span class="material-symbols-outlined">work</span> Vínculo Empregatício Atual
-            </span>
+        {% if jogador.empresa_base == 'Desempregado' %}
+            <div style="background: rgba(239, 68, 68, 0.1); border: 1px dashed var(--vermelho); padding: 15px; border-radius: 8px; margin-bottom: 20px; color: var(--texto-claro); display: flex; align-items: center; gap: 15px;">
+                <span class="material-symbols-outlined" style="font-size: 36px; color: var(--vermelho);">warning</span>
+                <div>
+                    <strong style="font-size: 1.1em; color: var(--vermelho); font-family: 'Oswald', sans-serif;">Sem contrato ativo!</strong><br>
+                    <span style="font-size: 0.9em;">Apresente-se a uma nova transportadora para voltar à estrada.</span>
+                </div>
+            </div>
+
+            <form action="/contratar_empresa" method="POST">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Transportadora (Empregador)</label>
+                        <input type="text" name="empresa_base" placeholder="Ex: LKW Walter" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Cidade Sede da Garagem</label>
+                        <input type="text" name="cidade_base" placeholder="Ex: Munique" required>
+                    </div>
+                </div>
+                <button type="submit" class="btn-submit" style="font-family: 'Oswald', sans-serif; background: var(--verde); color: white; display: flex; justify-content: center; align-items: center; gap: 8px;">
+                    <span class="material-symbols-outlined">history_edu</span> Assinar Contrato
+                </button>
+            </form>
+        {% else %}
+            <!-- Leitura Bloqueada (Read-Only) -->
+            <div style="border: 1px solid var(--borda); background: #181a1f; padding: 20px; border-radius: 8px; display: flex; flex-direction: column; gap: 15px;">
+                <div>
+                    <div style="color: var(--texto-mudo); font-size: 0.85em; margin-bottom: 4px; text-transform: uppercase;">Empresa Empregadora</div>
+                    <div style="font-size: 1.4em; color: var(--dourado); font-family: 'Oswald', sans-serif; font-weight: bold;">{{ jogador.empresa_base }}</div>
+                </div>
+                <div>
+                    <div style="color: var(--texto-mudo); font-size: 0.85em; margin-bottom: 4px; text-transform: uppercase;">Sede da Base Atual</div>
+                    <div style="font-size: 1.2em; color: var(--texto-claro); font-family: 'Oswald', sans-serif;">{{ jogador.cidade_base }}</div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px;">
+                <button type="button" class="btn-submit" style="margin: 0; font-family: 'Oswald', sans-serif; display: flex; align-items: center; justify-content: center; gap: 6px;" onclick="abrirModalTransferencia()">
+                    <span class="material-symbols-outlined" style="font-size: 18px;">move_location</span> Alterar Sede
+                </button>
+                <button type="button" class="btn-submit" style="margin: 0; font-family: 'Oswald', sans-serif; background: transparent; border: 1px solid var(--vermelho); color: var(--vermelho); display: flex; align-items: center; justify-content: center; gap: 6px;" onclick="abrirModalDemissao()">
+                    <span class="material-symbols-outlined" style="font-size: 18px;">logout</span> Pedir Demissão
+                </button>
+            </div>
+            
+            <button type="button" class="btn-submit" style="margin-top: 15px; width: 100%; font-family: 'Oswald', sans-serif; background: #16181c; border: 1px dashed var(--borda); color: var(--texto-mudo); opacity: 0.6; cursor: not-allowed; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                <span class="material-symbols-outlined" style="font-size: 18px;">lock</span> Abrir Transportadora Própria (Em breve na Fase 4)
+            </button>
+        {% endif %}
+    </div>
+
+    <!-- BLOCO 2: Histórico de Vínculos -->
+    <div class="table-section" style="margin-bottom: 0;">
+        <div class="section-title" style="font-weight: bold; font-family: 'Oswald', sans-serif;">
+            <span style="display: flex; align-items: center; gap: 8px;"><span class="material-symbols-outlined">folder_open</span> Histórico de Emprego</span>
         </div>
         
-        <div class="form-grid">
-            <div class="form-group">
-                <label>Transportadora (Empregador)</label>
-                <div style="position: relative; display: flex; align-items: center;">
-                    <span class="material-symbols-outlined" style="position: absolute; left: 12px; color: var(--texto-mudo); font-size: 18px;">domain</span>
-                    <input type="text" name="empresa_base" value="{{ jogador.empresa_base }}" required style="padding-left: 38px; width: 100%;">
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label>Cidade Sede da Garagem</label>
-                <div style="position: relative; display: flex; align-items: center;">
-                    <span class="material-symbols-outlined" style="position: absolute; left: 12px; color: var(--texto-mudo); font-size: 18px;">location_city</span>
-                    <input type="text" name="cidade_base" value="{{ jogador.cidade_base }}" required style="padding-left: 38px; width: 100%;">
-                </div>
-            </div>
+        <div style="overflow-x: auto; max-height: 380px;">
+            <table>
+                <thead>
+                    <tr>
+                        <th style="font-family: 'Oswald', sans-serif;">Dia/Mês</th>
+                        <th style="font-family: 'Oswald', sans-serif;">Empresa</th>
+                        <th style="font-family: 'Oswald', sans-serif;">Sede</th>
+                        <th style="font-family: 'Oswald', sans-serif;">Situação</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for hist in historico_rh %}
+                    <tr>
+                        <td style="color: var(--texto-mudo); font-size: 0.9em;">{{ "%02d"|format(hist.numero_dia) }}/{{ "%02d"|format(hist.ciclo) }}</td>
+                        <td><strong style="color: var(--texto-claro);">{{ hist.empresa }}</strong></td>
+                        <td>{{ hist.cidade }}</td>
+                        <td>
+                            {% if hist.situacao == 'Contratado' %}
+                                <span style="background: rgba(34, 197, 94, 0.15); color: var(--verde); border: 1px solid rgba(34, 197, 94, 0.3); padding: 3px 8px; border-radius: 12px; font-size: 0.75em; font-weight: 700; text-transform: uppercase;">{{ hist.situacao }}</span>
+                            {% elif hist.situacao == 'Demissão' %}
+                                <span style="background: rgba(148, 163, 184, 0.15); color: var(--texto-mudo); border: 1px solid rgba(148, 163, 184, 0.3); padding: 3px 8px; border-radius: 12px; font-size: 0.75em; font-weight: 700; text-transform: uppercase;">{{ hist.situacao }}</span>
+                            {% elif 'Justa Causa' in hist.situacao %}
+                                <span style="background: rgba(239, 68, 68, 0.15); color: var(--vermelho); border: 1px solid rgba(239, 68, 68, 0.3); padding: 3px 8px; border-radius: 12px; font-size: 0.75em; font-weight: 700; text-transform: uppercase;">Justa Causa</span>
+                            {% elif hist.situacao == 'Transferência' %}
+                                <span style="background: rgba(59, 130, 246, 0.15); color: var(--azul-tag); border: 1px solid rgba(59, 130, 246, 0.3); padding: 3px 8px; border-radius: 12px; font-size: 0.75em; font-weight: 700; text-transform: uppercase;">{{ hist.situacao }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="4" style="text-align: center; color: var(--texto-mudo); padding: 20px;">Nenhum registo no histórico.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
+</div>
 
-    <!-- Botão de Salvar muito mais simples, integrado e elegante -->
-    <button type="submit" class="btn-submit" style="width: 100%; display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 10px;">
-        <span class="material-symbols-outlined">save</span> Atualizar Vínculo e Voltar ao Painel
-    </button>
-</form>
+<!-- MODAIS DE AÇÃO DE RH -->
+<div id="modalDemissao" class="modal-overlay">
+    <div class="modal-card">
+        <h3 style="font-family: 'Oswald', sans-serif; color: var(--vermelho);">Pedir Demissão?</h3>
+        <p>Tem certeza que deseja sair da <strong>{{ jogador.empresa_base }}</strong>? Ficará sem trabalho até assinar um novo contrato.</p>
+        <div class="modal-actions">
+            <button type="button" class="btn-modal-cancelar" onclick="fecharModalDemissao()">Cancelar</button>
+            <form action="/demitir_empresa" method="POST" style="margin: 0;">
+                <button type="submit" class="btn-modal-confirmar">Confirmar Saída</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<div id="modalTransferencia" class="modal-overlay">
+    <div class="modal-card" style="border-top-color: var(--dourado);">
+        <h3 style="font-family: 'Oswald', sans-serif; color: var(--dourado);">Transferência de Sede</h3>
+        <p>Para qual cidade da <strong>{{ jogador.empresa_base }}</strong> deseja ser transferido?</p>
+        
+        <form action="/transferir_sede" method="POST" style="margin: 0; text-align: left;">
+            <div class="form-group" style="margin-bottom: 20px;">
+                <label>Nova Cidade Sede</label>
+                <input type="text" name="nova_cidade" placeholder="Ex: Paris" required style="width: 100%; box-sizing: border-box;">
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn-modal-cancelar" onclick="fecharModalTransferencia()">Cancelar</button>
+                <button type="submit" class="btn-submit" style="margin: 0; background: var(--dourado); color: black;">Solicitar Transferência</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function abrirModalDemissao() { document.getElementById('modalDemissao').classList.add('active'); }
+    function fecharModalDemissao() { document.getElementById('modalDemissao').classList.remove('active'); }
+    function abrirModalTransferencia() { document.getElementById('modalTransferencia').classList.add('active'); }
+    function fecharModalTransferencia() { document.getElementById('modalTransferencia').classList.remove('active'); }
+</script>
 {% endblock %}

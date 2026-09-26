@@ -33,8 +33,16 @@ class Jogador(db.Model):
     dia_global_desbloqueio = db.Column(db.Integer, nullable=True)
 
     @property
-    def dias_no_mes(self):
-        return 30 if (self.ciclo % 2 != 0) else 31
+    def dias_no_mes(self): return 30 if (self.ciclo % 2 != 0) else 31
+
+class FreteAtivo(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    origem = db.Column(db.String(100), nullable=False)
+    destino = db.Column(db.String(100), nullable=False)
+    frete_bruto = db.Column(db.Float, nullable=False)
+    distancia_km = db.Column(db.Float, nullable=False)
+    hora_saida = db.Column(db.String(10), nullable=False)
+    anotacoes = db.Column(db.String(255), nullable=True)
 
 class Viagem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -45,8 +53,6 @@ class Viagem(db.Model):
     avaria_pct = db.Column(db.Float, default=0.0)
     comissao_recebida = db.Column(db.Float, nullable=False)
     anotacoes = db.Column(db.String(255), nullable=True)
-    
-    # NOVAS COLUNAS: Atrela a viagem ao dia e ciclo em que foi feita
     numero_dia = db.Column(db.Integer, default=1)
     ciclo = db.Column(db.Integer, default=1)
 
@@ -56,11 +62,8 @@ class DiaHistorico(db.Model):
     ciclo = db.Column(db.Integer, nullable=False)
     situacao = db.Column(db.String(50), default="Tranquilo")
     chuva = db.Column(db.String(50), default="Sem chuva")
-    
     custo_total = db.Column(db.Float, default=0.0)
-    # NOVA COLUNA: Salva todo o ganho consolidado deste dia
     ganho_total = db.Column(db.Float, default=0.0)
-    
     eventos = db.relationship('EventoDia', backref='dia_historico', lazy=True, cascade="all, delete")
 
 class EventoDia(db.Model):
@@ -73,6 +76,14 @@ class EventoDia(db.Model):
     observacao = db.Column(db.String(255), nullable=True)
     fase_jogador = db.Column(db.Integer, default=1) 
     dia_historico_id = db.Column(db.Integer, db.ForeignKey('dia_historico.id'), nullable=True)
+
+class HistoricoEmprego(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    empresa = db.Column(db.String(100), nullable=False)
+    cidade = db.Column(db.String(100), nullable=False)
+    ciclo = db.Column(db.Integer, nullable=False)
+    numero_dia = db.Column(db.Integer, nullable=False)
+    situacao = db.Column(db.String(50), nullable=False)
 
 # ==============================================================================
 # FILTROS E FUNÇÕES AUXILIARES
@@ -101,42 +112,21 @@ def obter_pct_comissao(fase):
 def obter_cargo_padrao_fase(fase):
     return {1: "Empregado", 2: "Agregado", 3: "Autônomo", 4: "Empresário"}.get(fase, "Empregado")
 
-def fechar_dia_jogador(jogador):
-    eventos_pendentes = EventoDia.query.filter_by(dia_historico_id=None).all()
-    custo_dia = sum(ev.valor for ev in eventos_pendentes if (ev.fase_jogador >= 3) or (not ev.em_servico))
-    jogador.saldo -= custo_dia
-
-    viagens_do_dia = Viagem.query.filter_by(numero_dia=jogador.dias_trabalhados, ciclo=jogador.ciclo).all()
-    ganho_dia = sum(v.comissao_recebida for v in viagens_do_dia)
-
-    if jogador.dias_trabalhados == jogador.dias_no_mes:
-        salario = 1300.0 if jogador.fase == 1 else (1500.0 if jogador.fase == 2 else 0.0)
-        ganho_dia += salario
-        jogador.saldo += salario
-        jogador.total_salarios += salario
-
-    novo_dia = DiaHistorico(
-        numero_dia=jogador.dias_trabalhados, 
-        ciclo=jogador.ciclo, 
-        custo_total=custo_dia,
-        ganho_total=ganho_dia
-    )
-    db.session.add(novo_dia)
-    db.session.flush()
-
-    for ev in eventos_pendentes: 
-        ev.dia_historico_id = novo_dia.id
-
-    jogador.dias_trabalhados += 1
-    if jogador.dias_trabalhados > jogador.dias_no_mes:
-        jogador.dias_trabalhados = 1
-        jogador.ciclo += 1
+# --- REGRA DE NEGÓCIO DE CUSTOS POR FASE ---
+def motorista_paga_evento(fase, tipo, em_servico):
+    if not em_servico: return True # Se for particular, paga sempre
+    if fase >= 3: return True # Fase 3 e 4 pagam TUDO
+    if fase == 1: return tipo in ['Multa', 'Acidente'] # Fase 1 só paga erros
+    if fase == 2: return tipo in ['Multa', 'Acidente', 'Abastecimento', 'Manutenção', 'Tag de Pedágio'] # Fase 2 paga camião
+    return True
 
 def fechar_dia_jogador(jogador):
     eventos_pendentes = EventoDia.query.filter_by(dia_historico_id=None).all()
-    custo_dia = sum(ev.valor for ev in eventos_pendentes if (ev.fase_jogador >= 3) or (not ev.em_servico))
+    
+    # Usa a nova regra de negócio para saber o que cobrar do Motorista
+    custo_dia = sum(ev.valor for ev in eventos_pendentes if motorista_paga_evento(ev.fase_jogador, ev.tipo, ev.em_servico))
     jogador.saldo -= custo_dia
-
+    
     viagens_do_dia = Viagem.query.filter_by(numero_dia=jogador.dias_trabalhados, ciclo=jogador.ciclo).all()
     ganho_dia = sum(v.comissao_recebida for v in viagens_do_dia)
 
@@ -151,21 +141,14 @@ def fechar_dia_jogador(jogador):
     db.session.flush()
 
     for ev in eventos_pendentes: ev.dia_historico_id = novo_dia.id
-
     jogador.dias_trabalhados += 1
-    jogador.dias_globais += 1 # ACRESCENTA O DIA GLOBAL
+    jogador.dias_globais += 1
     if jogador.dias_trabalhados > jogador.dias_no_mes:
         jogador.dias_trabalhados = 1
         jogador.ciclo += 1
 
 def aplicar_dias_inativos(jogador, qtd_dias, observacao_dia, tipo_override=None):
-    custos_diarios = [
-        ("08:00", "Refeição", "Café da Manhã", 15.0),
-        ("13:00", "Refeição", "Almoço", 25.0),
-        ("20:00", "Refeição", "Jantar", 20.0),
-        ("22:00", "Descanso/11h", "Estadia", 45.0)
-    ]
-    
+    custos_diarios = [("08:00", "Refeição", "Café da Manhã", 15.0),("13:00", "Refeição", "Almoço", 25.0),("20:00", "Refeição", "Jantar", 20.0),("22:00", "Descanso/11h", "Estadia", 45.0)]
     eventos_pendentes = EventoDia.query.filter_by(dia_historico_id=None).all()
     if eventos_pendentes:
         fechar_dia_jogador(jogador)
@@ -184,7 +167,7 @@ def aplicar_dias_inativos(jogador, qtd_dias, observacao_dia, tipo_override=None)
             
         jogador.saldo -= custo_dia
         jogador.dias_trabalhados += 1
-        jogador.dias_globais += 1 # ACRESCENTA O DIA GLOBAL A CADA GIRO DO LOOP
+        jogador.dias_globais += 1 
         if jogador.dias_trabalhados > jogador.dias_no_mes:
             jogador.dias_trabalhados = 1
             jogador.ciclo += 1
@@ -203,13 +186,69 @@ def dashboard():
         jogador = Jogador(saldo=5000.0)
         db.session.add(jogador)
         db.session.commit()
-
     total_comissoes = db.session.query(db.func.sum(Viagem.comissao_recebida)).scalar() or 0.0
     viagens = Viagem.query.order_by(Viagem.id.desc()).limit(7).all()
     historico_dias = DiaHistorico.query.order_by(DiaHistorico.ciclo.desc(), DiaHistorico.numero_dia.desc(), DiaHistorico.id.desc()).limit(7).all()
     eventos_pendentes = EventoDia.query.filter_by(dia_historico_id=None).order_by(EventoDia.id.asc()).all()
+    frete_ativo = FreteAtivo.query.first()
+    return render_template('dashboard.html', jogador=jogador, viagens=viagens, total_comissoes=total_comissoes, eventos_pendentes=eventos_pendentes, historico_dias=historico_dias, frete_ativo=frete_ativo, aba_ativa='painel')
 
-    return render_template('dashboard.html', jogador=jogador, viagens=viagens, total_comissoes=total_comissoes, eventos_pendentes=eventos_pendentes, historico_dias=historico_dias, aba_ativa='painel')
+@app.route('/pegar_frete', methods=['POST'])
+def pegar_frete():
+    if FreteAtivo.query.first(): return redirect(url_for('dashboard'))
+    origem = request.form.get('origem')
+    hora_saida = request.form.get('hora_saida')
+    novo_frete = FreteAtivo(
+        origem=origem, destino=request.form.get('destino'), frete_bruto=parse_br_float(request.form.get('frete_bruto')),
+        distancia_km=parse_br_float(request.form.get('distancia_km')), hora_saida=hora_saida, anotacoes=request.form.get('anotacoes')
+    )
+    db.session.add(novo_frete)
+    jogador = Jogador.query.first()
+    if jogador:
+        ev_carregamento = EventoDia(hora=hora_saida, tipo="Carregamento", cidade=origem, valor=0.0, em_servico=True, observacao="Início do transporte da carga", fase_jogador=jogador.fase)
+        db.session.add(ev_carregamento)
+    db.session.commit()
+    return redirect(url_for('dashboard'))
+
+@app.route('/cancelar_frete', methods=['POST'])
+def cancelar_frete():
+    frete = FreteAtivo.query.first()
+    if frete:
+        db.session.delete(frete)
+        db.session.commit()
+    return redirect(url_for('dashboard'))
+
+@app.route('/finalizar_frete', methods=['POST'])
+def finalizar_frete():
+    jogador = Jogador.query.first()
+    frete = FreteAtivo.query.first()
+    if not jogador or not frete: return redirect(url_for('dashboard'))
+    avaria_pct = parse_br_float(request.form.get('avaria_pct'))
+    hora_chegada = request.form.get('hora_chegada')
+    
+    comissao_bruta = frete.frete_bruto * obter_pct_comissao(jogador.fase)
+    desconto = frete.frete_bruto * (avaria_pct / 100.0)
+    saldo_diferenca = comissao_bruta - desconto
+    comissao_liquida = saldo_diferenca / 2.0 if saldo_diferenca < 0 else saldo_diferenca
+    jogador.saldo += comissao_liquida
+
+    ev_viagem = EventoDia(hora=hora_chegada, tipo="Em serviço", cidade="Na estrada", valor=0.0, em_servico=True, observacao=f"Viagem de {frete.origem} a {frete.destino}", fase_jogador=jogador.fase)
+    db.session.add(ev_viagem)
+
+    try:
+        h, m = map(int, hora_chegada.split(':'))
+        h_desc = (h + 2) % 24
+        hora_desc = f"{h_desc:02d}:{m:02d}"
+    except: hora_desc = hora_chegada 
+
+    ev_chegada = EventoDia(hora=hora_desc, tipo="Descarregamento", cidade=frete.destino, valor=0.0, em_servico=True, observacao=f"Entrega concluída. Recebido: {moeda_filter(comissao_liquida, jogador.moeda)}", fase_jogador=jogador.fase)
+    db.session.add(ev_chegada)
+
+    nova_viagem = Viagem(origem=frete.origem, destino=frete.destino, frete_bruto=frete.frete_bruto, distancia_km=frete.distancia_km, avaria_pct=avaria_pct, comissao_recebida=comissao_liquida, anotacoes=frete.anotacoes, numero_dia=jogador.dias_trabalhados, ciclo=jogador.ciclo)
+    db.session.add(nova_viagem)
+    db.session.delete(frete)
+    db.session.commit()
+    return redirect(url_for('dashboard'))
 
 @app.route('/calculadora')
 def calculadora():
@@ -221,21 +260,13 @@ def calculadora():
 def comprar_passagem():
     jogador = Jogador.query.first()
     if not jogador: return redirect(url_for('dashboard'))
-
-    origem = request.form.get('origem')
-    destino = request.form.get('destino')
-    valor = parse_br_float(request.form.get('valor'))
-    minutos_viagem = int(request.form.get('tempo_minutos', 0))
-
+    origem, destino, valor, minutos_viagem = request.form.get('origem'), request.form.get('destino'), parse_br_float(request.form.get('valor')), int(request.form.get('tempo_minutos', 0))
     ultimo_evento = EventoDia.query.filter_by(dia_historico_id=None).order_by(EventoDia.id.desc()).first()
     if ultimo_evento:
         h, m = map(int, ultimo_evento.hora.split(':'))
         minutos_atual = (h * 60) + m
-    else:
-        minutos_atual = 8 * 60
-
+    else: minutos_atual = 8 * 60
     minutos_final = minutos_atual + minutos_viagem
-
     if minutos_final < 1440:
         hora_chegada = f"{minutos_final // 60:02d}:{minutos_final % 60:02d}"
         novo_evento = EventoDia(hora=hora_chegada, tipo="Deslocamento (Passagem)", cidade=f"{origem} ➔ {destino}", valor=valor, em_servico=False, observacao=f"Viagem de ônibus ({minutos_viagem//60}h {minutos_viagem%60}m)", fase_jogador=jogador.fase)
@@ -244,14 +275,11 @@ def comprar_passagem():
         evento_embarque = EventoDia(hora="23:59", tipo="Deslocamento (Embarque)", cidade=origem, valor=valor, em_servico=False, observacao="Passagem cobrada. Viagem entrou pela madrugada.", fase_jogador=jogador.fase)
         db.session.add(evento_embarque)
         db.session.flush()
-
         fechar_dia_jogador(jogador)
-
         minutos_novo_dia = minutos_final - 1440
         hora_chegada_novo_dia = f"{minutos_novo_dia // 60:02d}:{minutos_novo_dia % 60:02d}"
         evento_desembarque = EventoDia(hora=hora_chegada_novo_dia, tipo="Deslocamento (Chegada)", cidade=destino, valor=0.0, em_servico=False, observacao=f"Fim da viagem saindo de {origem}.", fase_jogador=jogador.fase)
         db.session.add(evento_desembarque)
-
     db.session.commit()
     return redirect(url_for('dashboard'))
 
@@ -259,60 +287,31 @@ def comprar_passagem():
 def estatisticas():
     jogador = Jogador.query.first()
     if not jogador: return redirect(url_for('dashboard'))
-
     viagens = Viagem.query.all()
     total_km = sum(v.distancia_km for v in viagens)
     lucro_por_km = (sum(v.comissao_recebida for v in viagens) / total_km) if total_km > 0 else 0
     maior_frete = max(viagens, key=lambda v: v.comissao_recebida) if viagens else None
-
-    eventos_pagos = EventoDia.query.filter(db.or_(EventoDia.fase_jogador >= 3, EventoDia.em_servico == False)).all()
+    
+    # Atualizado para a nova regra de negócio nas estatísticas
+    todos_eventos = EventoDia.query.all()
+    eventos_pagos = [ev for ev in todos_eventos if motorista_paga_evento(ev.fase_jogador, ev.tipo, ev.em_servico)]
+    
     custo_desatencao = sum(ev.valor for ev in eventos_pagos if ev.tipo in ['Multa', 'Acidente']) + sum(v.frete_bruto * (v.avaria_pct / 100.0) for v in viagens)
-
     despesas_agrupadas = {}
     for ev in eventos_pagos:
         if ev.valor > 0: despesas_agrupadas[ev.tipo] = despesas_agrupadas.get(ev.tipo, 0) + ev.valor
-
+    
     ultimas_viagens = Viagem.query.order_by(Viagem.id.desc()).limit(7).all()
     ultimas_viagens.reverse()
     fretes_labels = [f"{v.origem} ➔ {v.destino}" for v in ultimas_viagens]
     fretes_valores = [v.comissao_recebida for v in ultimas_viagens]
-
     ultimos_dias = DiaHistorico.query.order_by(DiaHistorico.ciclo.desc(), DiaHistorico.numero_dia.desc(), DiaHistorico.id.desc()).limit(10).all()
     ultimos_dias.reverse()
     dias_labels = [f"Dia {d.numero_dia}" for d in ultimos_dias]
     dias_custos = [d.custo_total for d in ultimos_dias]
-    
-    # NOVA VARIÁVEL: Lista com os ganhos enviados para o gráfico!
     dias_ganhos = [d.ganho_total for d in ultimos_dias]
-
-    dados_graficos = {
-        'despesas_labels': list(despesas_agrupadas.keys()), 'despesas_valores': list(despesas_agrupadas.values()),
-        'fretes_labels': fretes_labels, 'fretes_valores': fretes_valores,
-        'dias_labels': dias_labels, 'dias_custos': dias_custos, 'dias_ganhos': dias_ganhos
-    }
-
+    dados_graficos = {'despesas_labels': list(despesas_agrupadas.keys()), 'despesas_valores': list(despesas_agrupadas.values()), 'fretes_labels': fretes_labels, 'fretes_valores': fretes_valores, 'dias_labels': dias_labels, 'dias_custos': dias_custos, 'dias_ganhos': dias_ganhos}
     return render_template('estatisticas.html', jogador=jogador, aba_ativa='estatisticas', total_km=total_km, lucro_por_km=lucro_por_km, custo_desatencao=custo_desatencao, maior_frete=maior_frete, dados_graficos=json.dumps(dados_graficos))
-
-@app.route('/registrar_viagem', methods=['POST'])
-def registrar_viagem():
-    jogador = Jogador.query.first()
-    if not jogador: return redirect(url_for('dashboard'))
-
-    origem, destino = request.form.get('origem'), request.form.get('destino')
-    frete_bruto, distancia_km = parse_br_float(request.form.get('frete_bruto')), parse_br_float(request.form.get('distancia_km'))
-    avaria_pct = parse_br_float(request.form.get('avaria_pct'))
-    
-    comissao_bruta = frete_bruto * obter_pct_comissao(jogador.fase)
-    saldo_diferenca = comissao_bruta - (frete_bruto * (avaria_pct / 100.0))
-    comissao_liquida = saldo_diferenca / 2.0 if saldo_diferenca < 0 else saldo_diferenca
-
-    jogador.saldo += comissao_liquida
-    
-    # Passando o carimbo de tempo para a Viagem
-    nova_viagem = Viagem(origem=origem, destino=destino, frete_bruto=frete_bruto, distancia_km=distancia_km, avaria_pct=avaria_pct, comissao_recebida=comissao_liquida, anotacoes=request.form.get('anotacoes'), numero_dia=jogador.dias_trabalhados, ciclo=jogador.ciclo)
-    db.session.add(nova_viagem)
-    db.session.commit()
-    return redirect(url_for('dashboard'))
 
 @app.route('/registrar_evento', methods=['POST'])
 def registrar_evento():
@@ -351,28 +350,23 @@ def avancar_dia():
 def voltar_dia():
     jogador = Jogador.query.first()
     if not jogador: return redirect(url_for('dashboard'))
-    
     if request.form.get('nao_perguntar_mais') == 'on': jogador.confirmar_voltar_dia = False
-    
     if jogador.dias_trabalhados == 1 and jogador.ciclo == 1:
         db.session.commit()
         return redirect(url_for('dashboard'))
-
     jogador.dias_trabalhados -= 1
-    jogador.dias_globais -= 1 # DIMINUI O DIA GLOBAL (Assim o bloqueio de 30 dias respeita a viagem no tempo!)
+    jogador.dias_globais -= 1
     if jogador.dias_trabalhados < 1:
         jogador.ciclo -= 1
         jogador.dias_trabalhados = jogador.dias_no_mes
         salario = 1300.0 if jogador.fase == 1 else (1500.0 if jogador.fase == 2 else 0.0)
         jogador.saldo -= salario
         jogador.total_salarios -= salario
-
     dias_para_desfazer = DiaHistorico.query.filter_by(numero_dia=jogador.dias_trabalhados, ciclo=jogador.ciclo).all()
     for dia in dias_para_desfazer:
         jogador.saldo += dia.custo_total
         for ev in dia.eventos: ev.dia_historico_id = None
         db.session.delete(dia)
-
     db.session.commit()
     return redirect(url_for('dashboard'))
 
@@ -416,7 +410,6 @@ def limpar_historico():
 def lancar_fds():
     jogador = Jogador.query.first()
     if jogador:
-        # Fim de semana usa as categorias normais (Refeição e Descanso)
         aplicar_dias_inativos(jogador, 2, "Final de Semana")
         db.session.commit()
     return redirect(url_for('dashboard'))
@@ -426,9 +419,10 @@ def caminhao_tombado():
     jogador = Jogador.query.first()
     if jogador:
         if jogador.empresa_base != "Desempregado":
-            # Guarda a empresa antiga e seta a data de desbloqueio para 30 dias no futuro!
             jogador.empresa_bloqueada = jogador.empresa_base
             jogador.dia_global_desbloqueio = jogador.dias_globais + 30
+            hist = HistoricoEmprego(empresa=jogador.empresa_base, cidade=jogador.cidade_base, ciclo=jogador.ciclo, numero_dia=jogador.dias_trabalhados, situacao="Justa Causa (Acidente)")
+            db.session.add(hist)
             
         jogador.empresa_base = "Desempregado"
         jogador.cargo = "Desempregado"
@@ -436,30 +430,59 @@ def caminhao_tombado():
         db.session.commit()
     return redirect(url_for('dashboard'))
 
+# ==============================================================================
+# NOVAS ROTAS DE EMPRESA E RH
+# ==============================================================================
+
 @app.route('/empresa')
 def empresa():
     jogador = Jogador.query.first()
     if not jogador: return redirect(url_for('dashboard'))
-    return render_template('empresa.html', jogador=jogador, aba_ativa='empresa')
+    historico_rh = HistoricoEmprego.query.order_by(HistoricoEmprego.id.desc()).all()
+    return render_template('empresa.html', jogador=jogador, historico_rh=historico_rh, aba_ativa='empresa')
 
-@app.route('/salvar_empresa', methods=['POST'])
-def salvar_empresa():
+@app.route('/contratar_empresa', methods=['POST'])
+def contratar_empresa():
     jogador = Jogador.query.first()
     if jogador:
-        nova_empresa = request.form.get('empresa_base', jogador.empresa_base)
-        
-        # VERIFICAÇÃO DO BLOQUEIO DE 30 DIAS
+        nova_empresa = request.form.get('empresa_base')
+        nova_cidade = request.form.get('cidade_base')
         if jogador.empresa_bloqueada and nova_empresa.lower().strip() == jogador.empresa_bloqueada.lower().strip():
             if jogador.dias_globais < jogador.dia_global_desbloqueio:
-                return redirect(url_for('empresa')) # Ignora a mudança e volta pra tela de empresa
+                return redirect(url_for('empresa')) 
                 
         jogador.empresa_base = nova_empresa
-        jogador.cidade_base = request.form.get('cidade_base', jogador.cidade_base)
-        if jogador.empresa_base != "Desempregado":
-            jogador.cargo = obter_cargo_padrao_fase(jogador.fase)
+        jogador.cidade_base = nova_cidade
+        jogador.cargo = obter_cargo_padrao_fase(jogador.fase)
+        
+        hist = HistoricoEmprego(empresa=nova_empresa, cidade=nova_cidade, ciclo=jogador.ciclo, numero_dia=jogador.dias_trabalhados, situacao="Contratado")
+        db.session.add(hist)
         db.session.commit()
-    # AGORA REDIRECIONA PARA O PAINEL PRINCIPAL
-    return redirect(url_for('dashboard'))
+    return redirect(url_for('empresa'))
+
+@app.route('/demitir_empresa', methods=['POST'])
+def demitir_empresa():
+    jogador = Jogador.query.first()
+    if jogador and jogador.empresa_base != "Desempregado":
+        hist = HistoricoEmprego(empresa=jogador.empresa_base, cidade=jogador.cidade_base, ciclo=jogador.ciclo, numero_dia=jogador.dias_trabalhados, situacao="Demissão")
+        db.session.add(hist)
+        jogador.empresa_base = "Desempregado"
+        jogador.cargo = "Desempregado"
+        db.session.commit()
+    return redirect(url_for('empresa'))
+
+@app.route('/transferir_sede', methods=['POST'])
+def transferir_sede():
+    jogador = Jogador.query.first()
+    if jogador and jogador.empresa_base != "Desempregado":
+        nova_cidade = request.form.get('nova_cidade')
+        jogador.cidade_base = nova_cidade
+        hist = HistoricoEmprego(empresa=jogador.empresa_base, cidade=nova_cidade, ciclo=jogador.ciclo, numero_dia=jogador.dias_trabalhados, situacao="Transferência")
+        db.session.add(hist)
+        db.session.commit()
+    return redirect(url_for('empresa'))
+
+# ==============================================================================
 
 @app.route('/opcoes', methods=['GET', 'POST'])
 @app.route('/salvar_opcoes', methods=['POST'])

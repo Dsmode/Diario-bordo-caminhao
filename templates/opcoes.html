@@ -3,80 +3,58 @@
 {% block title %}Diário de Bordo - Opções{% endblock %}
 
 {% block content %}
-<div class="header-profile" style="margin-bottom: 24px;">
+<div class="header-profile" style="margin-bottom: 30px;">
     <div>
-        <h2>Opções do Sistema</h2>
-        <small>Gerencie os parâmetros da sua Carreira Realista e preferências do aplicativo</small>
+        <h2 style="font-family: 'Oswald', sans-serif; font-size: 2.2em;">Configurações do Jogo</h2>
+        <small>Ajuste os dados da sua campanha e as preferências do sistema</small>
     </div>
     <div>
-        <span class="material-symbols-outlined" style="font-size: 36px; color: var(--dourado);">settings_suggest</span>
+        <span class="material-symbols-outlined" style="font-size: 40px; color: var(--dourado);">settings</span>
     </div>
 </div>
 
-<form action="/salvar_opcoes" method="POST">
-    
-    <!-- BLOCO 1: Perfil e Carreira -->
-    <div class="form-section" style="margin-bottom: 20px;">
-        <div class="section-title">
-            <span style="display: flex; align-items: center; gap: 8px;">
-                <span class="material-symbols-outlined">badge</span> Perfil e Carreira
-            </span>
-        </div>
+<div class="form-section" style="max-width: 600px; margin: 0 auto;">
+    <form action="/salvar_opcoes" method="POST">
         <div class="form-grid">
-            <div class="form-group">
+            <div class="form-group full-width">
                 <label>Nome do Motorista</label>
-                <div style="position: relative; display: flex; align-items: center;">
-                    <span class="material-symbols-outlined" style="position: absolute; left: 12px; color: var(--texto-mudo); font-size: 18px;">person</span>
-                    <input type="text" name="nome" value="{{ jogador.nome }}" required style="padding-left: 38px; width: 100%;">
+                <input type="text" name="nome" value="{{ jogador.nome }}" required>
+            </div>
+            
+            <div class="form-group full-width">
+                <label>Fase da Campanha</label>
+                <select name="fase" required>
+                    <option value="1" {% if jogador.fase == 1 %}selected{% endif %}>Fase 1 - Empregado (Motorista de Frota)</option>
+                    <option value="2" {% if jogador.fase == 2 %}selected{% endif %}>Fase 2 - Agregado (Caminhão Próprio)</option>
+                    <option value="3" {% if jogador.fase == 3 %}selected{% endif %}>Fase 3 - Autônomo (Caminhão + Reboque)</option>
+                    <option value="4" {% if jogador.fase == 4 %}selected{% endif %}>Fase 4 - Empresário (Transportadora Própria)</option>
+                </select>
+                <small style="color: var(--texto-mudo); font-size: 0.85em; margin-top: 5px; display: block;">Atenção: Mudar a fase altera as taxas de comissão e quem paga os custos de viagem.</small>
+            </div>
+            
+            <div class="form-group full-width">
+                <label>Moeda do Jogo</label>
+                <select name="moeda" required>
+                    <option value="$" {% if jogador.moeda == '$' %}selected{% endif %}>Dólar ($)</option>
+                    <option value="€" {% if jogador.moeda == '€' %}selected{% endif %}>Euro (€)</option>
+                    <option value="R$" {% if jogador.moeda == 'R$' %}selected{% endif %}>Real (R$)</option>
+                    <option value="£" {% if jogador.moeda == '£' %}selected{% endif %}>Libra (£)</option>
+                </select>
+            </div>
+
+            <div class="form-group full-width" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid var(--borda);">
+                <div class="custom-checkbox-container">
+                    <label class="custom-checkbox">
+                        <input type="checkbox" name="confirmar_voltar_dia" {% if jogador.confirmar_voltar_dia %}checked{% endif %}>
+                        <span class="checkmark"></span> Perguntar confirmação antes de "Voltar no Tempo" (Recuar 1 dia)
+                    </label>
                 </div>
             </div>
-            <div class="form-group">
-                <label>Fase Atual</label>
-                <select name="fase">
-                    <option value="1" {% if jogador.fase == 1 %}selected{% endif %}>Fase 1 - Empregado (Comissão 5%)</option>
-                    <option value="2" {% if jogador.fase == 2 %}selected{% endif %}>Fase 2 - Agregado (Comissão 10%)</option>
-                    <option value="3" {% if jogador.fase == 3 %}selected{% endif %}>Fase 3 - Autônomo (Comissão 20%)</option>
-                    <option value="4" {% if jogador.fase == 4 %}selected{% endif %}>Fase 4 - Empresário (Comissão 20% + Frota)</option>
-                    <option value="5" {% if jogador.fase == 5 %}selected{% endif %}>Fase 5 - Magnata (Sede Gigante)</option>
-                </select>
-            </div>
         </div>
-    </div>
 
-    <!-- BLOCO 3: Preferências do Sistema -->
-    <div class="form-section" style="margin-bottom: 24px;">
-        <div class="section-title">
-            <span style="display: flex; align-items: center; gap: 8px;">
-                <span class="material-symbols-outlined">display_settings</span> Preferências do Sistema
-            </span>
-        </div>
-        <div class="form-group" style="margin-top: 10px; padding: 10px 15px; background: rgba(0,0,0,0.2); border-radius: 8px; border: 1px solid var(--borda);">
-            <div class="custom-checkbox-container">
-                <label class="custom-checkbox" style="font-weight: bold; color: var(--texto-claro);">
-                    <input type="checkbox" name="confirmar_voltar_dia" {% if jogador.confirmar_voltar_dia %}checked{% endif %}>
-                    <span class="checkmark"></span>
-                    Exibir confirmação ao "Voltar Dia"
-                </label>
-            </div>
-            <p style="color: var(--texto-mudo); font-size: 0.85em; margin-top: 8px; margin-left: 28px; line-height: 1.4;">
-                Se ativado, o painel perguntará se você tem certeza antes de voltar no tempo. Se desativado, o botão apagará o dia e estornará os custos instantaneamente.
-            </p>
-        </div>
-        <br>
-        <div class="form-group full-width">
-                <label>Moeda do Jogo</label>
-                <select name="moeda">
-                    <option value="$" {% if jogador.moeda == '$' %}selected{% endif %}>Dólar Americano ($) - ATS</option>
-                    <option value="€" {% if jogador.moeda == '€' %}selected{% endif %}>Euro (€) - ETS2</option>
-                    <option value="R$" {% if jogador.moeda == 'R$' %}selected{% endif %}>Real Brasileiro (R$)</option>
-                </select>
-            </div>
-    </div>
-
-    <!-- Botão Salvar Maior e Destacado -->
-    <button type="submit" class="btn-submit" style="display: flex; justify-content: center; align-items: center; gap: 8px; font-size: 1.1em; padding: 14px; text-transform: uppercase; letter-spacing: 1px;">
-        <span class="material-symbols-outlined">save</span> Salvar Alterações
-    </button>
-
-</form>
+        <button type="submit" class="btn-submit" style="margin-top: 25px; display: flex; justify-content: center; align-items: center; gap: 8px; font-family: 'Oswald', sans-serif;">
+            <span class="material-symbols-outlined">save</span> Salvar Alterações
+        </button>
+    </form>
+</div>
 {% endblock %}

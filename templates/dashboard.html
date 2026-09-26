@@ -3,160 +3,172 @@
 {% block title %}Diário de Bordo - Painel{% endblock %}
 
 {% block content %}
-<!-- Perfil do Jogador -->
-<div class="header-profile">
-    <div>
-        <h2>{{ jogador.nome }}</h2>
-        <small>Empresa: {{ jogador.empresa_base }} | Cidade-Base: {{ jogador.cidade_base }}</small>
+<!-- Perfil do Jogador (DESIGN CLEAN) -->
+<div style="margin-bottom: 35px; padding-top: 10px;">
+    <div style="color: var(--dourado); font-family: 'Oswald', sans-serif; font-size: 0.9em; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 5px;">
+        Fase {{ jogador.fase }} &bull; {{ jogador.cargo }}
     </div>
-    <div>
-        <span style="background: #282a30; padding: 5px 12px; border-radius: 20px; border: 1px solid var(--borda); font-size: 0.85em;">
-            Fase {{ jogador.fase }} - <strong style="color: var(--dourado);">{{ jogador.cargo }}</strong>
-        </span>
+    <h1 style="font-family: 'Oswald', sans-serif; font-size: 2.8em; margin: 0; color: var(--texto-claro); text-transform: uppercase; line-height: 1.1; font-weight: 700; letter-spacing: 0.5px;">
+        {{ jogador.nome }} <span style="color: var(--texto-mudo); font-weight: 400;">&bull;</span> {{ jogador.empresa_base }}
+    </h1>
+    <div style="color: var(--texto-mudo); font-family: 'Inter', sans-serif; font-size: 0.95em; margin-top: 10px;">
+        Base: {{ jogador.cidade_base }} &bull; Turno: {% if jogador.fase <= 2 %}Segunda a Sexta das 07:00 às 18:00{% else %}Independente{% endif %}
     </div>
 </div>
-
-<div class="rules-card" style="display: none;"></div> 
 
 <!-- Indicadores -->
 <div class="cards">
     <div class="card">
-        <h3>SALDO DA CAMPANHA</h3>
-        <div class="value" style="color: {% if jogador.saldo < 0 %}var(--vermelho){% else %}var(--dourado){% endif %};">
+        <h3 style="font-family: 'Oswald', sans-serif;">SALDO DA CAMPANHA</h3>
+        <div class="value" style="font-family: 'Oswald', sans-serif; color: {% if jogador.saldo < 0 %}var(--vermelho){% else %}var(--dourado){% endif %};">
             {{ jogador.saldo | moeda(jogador.moeda) }}
         </div>
     </div>
-
     <div class="card">
-        <h3>SALÁRIOS GANHOS</h3>
-        <div class="value" style="color: var(--texto-claro);">
-            {{ jogador.total_salarios | moeda(jogador.moeda) }}
-        </div>
+        <h3 style="font-family: 'Oswald', sans-serif;">SALÁRIOS GANHOS</h3>
+        <div class="value" style="font-family: 'Oswald', sans-serif; color: var(--texto-claro);">{{ jogador.total_salarios | moeda(jogador.moeda) }}</div>
     </div>
-
     <div class="card">
-        <h3>COMISSÕES ({% if jogador.fase == 1 %}5%{% elif jogador.fase == 2 %}10%{% else %}20%{% endif %})</h3>
-        <div class="value" style="color: var(--texto-claro);">
-            {{ total_comissoes | moeda(jogador.moeda) }}
-        </div>
+        <h3 style="font-family: 'Oswald', sans-serif;">COMISSÕES ({% if jogador.fase == 1 %}5%{% elif jogador.fase == 2 %}10%{% else %}20%{% endif %})</h3>
+        <div class="value" style="font-family: 'Oswald', sans-serif; color: var(--texto-claro);">{{ total_comissoes | moeda(jogador.moeda) }}</div>
     </div>
-
     <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
-        <h3 style="margin-bottom: 10px;">DIAS TRABALHADOS</h3>
-        
+        <h3 style="font-family: 'Oswald', sans-serif; margin-bottom: 10px;">DIAS TRABALHADOS</h3>
         {% set ciclo_atual = jogador.ciclo if jogador.ciclo is defined else 1 %}
         {% set dias_totais = jogador.dias_no_mes %}
         {% set dias_atuais = jogador.dias_trabalhados if jogador.dias_trabalhados is defined else 1 %}
         {% set dias_restantes = dias_totais - dias_atuais %}
-        
         <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-input); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--borda);">
-            <!-- Botão de Voltar -->
             <form action="/voltar_dia" method="POST" id="formVoltarDia" style="margin: 0;">
                 <input type="hidden" name="nao_perguntar_mais" id="inputNaoPerguntarMais" value="off">
-                <button type="button" onclick="tentarVoltarDia()" title="Voltar 1 Dia" style="background: transparent; border: none; color: var(--texto-mudo); cursor: pointer; display: flex; align-items: center; padding: 0;">
-                    <span class="material-symbols-outlined" style="font-size: 24px;">chevron_left</span>
-                </button>
+                <button type="button" onclick="tentarVoltarDia()" title="Voltar 1 Dia" style="background: transparent; border: none; color: var(--texto-mudo); cursor: pointer; display: flex; align-items: center; padding: 0;"><span class="material-symbols-outlined" style="font-size: 24px;">chevron_left</span></button>
             </form>
-            
-            <!-- Contador Central -->
-            <div class="value" style="color: var(--dourado); font-size: 1.5em; margin: 0;">
-                {{ "%02d"|format(dias_atuais) }}<span style="font-size: 0.6em; color: var(--texto-mudo);">/{{ dias_totais }}</span>
-            </div>
-            
-            <!-- Botão de Avançar -->
+            <div class="value" style="font-family: 'Oswald', sans-serif; color: var(--dourado); font-size: 1.5em; margin: 0;">{{ "%02d"|format(dias_atuais) }}<span style="font-size: 0.6em; color: var(--texto-mudo);">/{{ dias_totais }}</span></div>
             <form action="/avancar_dia" method="POST" style="margin: 0;">
-                <button type="submit" title="Avançar 1 Dia" style="background: transparent; border: none; color: var(--texto-claro); cursor: pointer; display: flex; align-items: center; padding: 0;">
-                    <span class="material-symbols-outlined" style="font-size: 24px;">chevron_right</span>
-                </button>
+                <button type="submit" title="Avançar 1 Dia" style="background: transparent; border: none; color: var(--texto-claro); cursor: pointer; display: flex; align-items: center; padding: 0;"><span class="material-symbols-outlined" style="font-size: 24px;">chevron_right</span></button>
             </form>
         </div>
-
-        <div class="subtext" style="margin-top: 10px; text-align: center;">
-            Faltam {{ dias_restantes }} dias para o salário • Ciclo {{ ciclo_atual }}
-        </div>
+        <div class="subtext" style="margin-top: 10px; text-align: center;">Faltam {{ dias_restantes }} dias para o salário • Mês {{ ciclo_atual }}</div>
     </div>
 </div>
 
-<!-- Lançar Novo Frete -->
-<div class="form-section">
-    <h3 class="section-title">
-        <span style="display: flex; align-items: center; gap: 8px;"><span class="material-symbols-outlined">inventory_2</span> Lançar Novo Frete</span>
-    </h3>
-    <form action="/registrar_viagem" method="POST" id="formViagem">
-        <div class="form-grid">
-            <div class="form-group">
-                <label>Cidade Origem</label>
-                <input type="text" name="origem" placeholder="Ex: San Diego" required>
+<!-- ============================================== -->
+<!-- 1. GRID SUPERIOR: REGISTRAR FRETE vs NOTA FISCAL  -->
+<!-- ============================================== -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 20px; margin-bottom: 20px; align-items: stretch;">
+    
+    <!-- Coluna Esquerda: Formulário -->
+    <div class="form-section" style="margin-bottom: 0;">
+        <h3 class="section-title" style="font-weight: bold; font-family: 'Oswald', sans-serif;">
+            <span style="display: flex; align-items: center; gap: 8px;"><span class="material-symbols-outlined">inventory_2</span> Registrar Frete</span>
+        </h3>
+        <form action="/pegar_frete" method="POST" id="formViagem">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Cidade Origem</label>
+                    <input type="text" name="origem" placeholder="Ex: Berlim" required {% if frete_ativo %}disabled{% endif %}>
+                </div>
+                <div class="form-group">
+                    <label>Cidade Destino</label>
+                    <input type="text" name="destino" placeholder="Ex: Praga" required {% if frete_ativo %}disabled{% endif %}>
+                </div>
+                <div class="form-group">
+                    <label>Frete Bruto ({{ jogador.moeda }})</label>
+                    <input type="text" id="frete_bruto" name="frete_bruto" inputmode="numeric" placeholder="6.000,00" required {% if frete_ativo %}disabled{% endif %}>
+                </div>
+                <div class="form-group">
+                    <label>Distância (KM)</label>
+                    <input type="text" id="distancia_km" name="distancia_km" placeholder="450" required {% if frete_ativo %}disabled{% endif %}>
+                </div>
+                <div class="form-group">
+                    <label>Horário de Saída</label>
+                    <input type="time" name="hora_saida" required {% if frete_ativo %}disabled{% endif %}>
+                </div>
+                <div class="form-group">
+                    <label>Sua Comissão Estimada (<span id="txtPctPrev">-</span>)</label>
+                    <div id="prevComissao" style="font-family: 'Oswald', sans-serif; font-size: 1.15em; font-weight: bold; color: var(--dourado); padding: 8px 12px; background: rgba(212, 175, 55, 0.1); border: 1px dashed var(--dourado); border-radius: 6px; display: flex; align-items: center; height: 100%; box-sizing: border-box;">
+                        {{ jogador.moeda }} 0,00
+                    </div>
+                </div>
+                <div class="form-group full-width">
+                    <label>Carga transportada</label>
+                    <input type="text" name="anotacoes" placeholder="Ex: Peças auto, Madeira, Eletrónicos..." {% if frete_ativo %}disabled{% endif %}>
+                </div>
             </div>
-            <div class="form-group">
-                <label>Cidade Destino</label>
-                <input type="text" name="destino" placeholder="Ex: Mojave" required>
-            </div>
-            <div class="form-group">
-                <label>Frete Bruto ({{ jogador.moeda }})</label>
-                <input type="text" id="frete_bruto" name="frete_bruto" inputmode="numeric" placeholder="6.000,00" required>
-            </div>
-            <div class="form-group">
-                <label>Distância (KM)</label>
-                <input type="text" id="distancia_km" name="distancia_km" placeholder="450" required>
-            </div>
-            <div class="form-group">
-                <label>Avaria na Carga (%)</label>
-                <input type="text" id="avaria_pct" name="avaria_pct" value="0" placeholder="0">
-            </div>
-            <div class="form-group full-width">
-                <label>Anotações / Observações</label>
-                <input type="text" name="anotacoes" placeholder="Ex: Carga frágil, sem incidentes...">
+            {% if frete_ativo %}
+                <button type="button" class="btn-submit" style="opacity: 0.5; cursor: not-allowed; font-family: 'Oswald', sans-serif;">Transporte em Andamento</button>
+            {% else %}
+                <button type="submit" class="btn-submit" style="font-family: 'Oswald', sans-serif;">Pegar Nota do Frete</button>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- Coluna Direita: Nota Fiscal (Frete Ativo) -->
+    <div class="form-section" style="margin-bottom: 0; display: flex; flex-direction: column;">
+        <h3 class="section-title" style="font-weight: bold; font-family: 'Oswald', sans-serif;">
+            <span style="display: flex; align-items: center; gap: 8px;"><span class="material-symbols-outlined">receipt_long</span> Nota Fiscal Eletrónica</span>
+        </h3>
+        
+        {% if frete_ativo %}
+        <div style="flex: 1; border: 1px solid var(--borda); background: #16181c; border-radius: 8px; padding: 20px; display: flex; flex-direction: column; box-sizing: border-box;">
+            <div style="border: 2px dashed var(--dourado); padding: 20px; border-radius: 6px; flex: 1; display: flex; flex-direction: column; box-sizing: border-box;">
+                <h3 style="color: var(--dourado); margin: 0 0 15px 0; text-transform: uppercase; letter-spacing: 1px; font-size: 1.15em; font-weight: bold; font-family: 'Oswald', sans-serif;">
+                    Transporte em Andamento
+                </h3>
+                <div style="flex: 1; font-size: 0.95em; line-height: 1.7; color: var(--texto-claro);">
+                    <div><span style="color: var(--texto-claro);">Origem:</span> {{ frete_ativo.origem }}</div>
+                    <div><span style="color: var(--texto-claro);">Destino:</span> {{ frete_ativo.destino }}</div>
+                    <div><span style="color: var(--texto-claro);">Partida:</span> {{ frete_ativo.hora_saida }}</div>
+                    <div><span style="color: var(--texto-claro);">Distância:</span> {{ frete_ativo.distancia_km | numero }} km</div>
+                    {% if frete_ativo.anotacoes %}
+                        <div style="margin-top: 15px; margin-bottom: 15px; font-size: 1em; color: var(--dourado); font-weight: bold; text-transform: uppercase; font-family: 'Oswald', sans-serif;">Carga: <span style="color: var(--texto-claro); font-family: 'Inter', sans-serif; font-weight: normal; text-transform: none;">{{ frete_ativo.anotacoes }}</span></div>
+                    {% endif %}
+                    <div style="margin-top: 20px; padding-top: 15px; border-top: 1px dashed rgba(255,255,255,0.1);">
+                        <span style="color: var(--texto-claro);">Frete Bruto Base:</span> <span style="color: var(--dourado); font-size: 1.15em; font-weight: bold; font-family: 'Oswald', sans-serif;">{{ frete_ativo.frete_bruto | moeda(jogador.moeda) }}</span>
+                    </div>
+                </div>
+                
+                <div style="display: flex; gap: 15px; margin-top: 20px;">
+                    <button type="button" class="btn-submit" style="margin-top: 0; background: #16181c; border: 1px solid var(--vermelho); color: var(--vermelho); padding: 12px 10px; width: 100%; text-transform: none; font-size: 14px; font-family: 'Oswald', sans-serif; flex: 1;" onclick="abrirModalCancelarFrete()">Cancelar</button>
+                    <button type="button" class="btn-submit" style="margin-top: 0; flex: 2; display: flex; justify-content: center; align-items: center; gap: 8px; font-size: 15px; text-transform: none; font-family: 'Oswald', sans-serif;" onclick="abrirModalFinalizarFrete({{ frete_ativo.frete_bruto }})">
+                        <span class="material-symbols-outlined" style="font-size: 18px;">task_alt</span> Finalizar Entrega
+                    </button>
+                </div>
             </div>
         </div>
-
-        <div class="preview-box">
-            <div class="preview-item">
-                <div style="color: var(--texto-mudo); font-size: 0.8em; margin-bottom: 4px; white-space: nowrap;">
-                    Comissão Bruta (<span id="txtPctComissao" style="display: inline !important; padding: 0; margin: 0;">{% if jogador.fase == 1 %}5%{% elif jogador.fase == 2 %}10%{% else %}20%{% endif %}</span>)
-                </div>
-                <strong id="prevComissaoBruta">{{ jogador.moeda }} 0,00</strong>
-            </div>
-            <div class="preview-item">
-                <div style="color: var(--texto-mudo); font-size: 0.8em; margin-bottom: 4px; white-space: nowrap;">
-                    Desconto por Avaria
-                </div>
-                <strong id="prevDesconto" style="color: var(--vermelho);">{{ jogador.moeda }} 0,00</strong>
-            </div>
-            <div class="preview-item">
-                <div style="color: var(--texto-mudo); font-size: 0.8em; margin-bottom: 4px; white-space: nowrap;">
-                    Valor Recebido
-                </div>
-                <strong id="prevComissaoLiquida">{{ jogador.moeda }} 0,00</strong>
-            </div>
+        {% else %}
+        <div style="flex: 1; border: 1px solid var(--borda); background: #16181c; border-radius: 8px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; color: var(--texto-mudo); padding: 30px;">
+            <span class="material-symbols-outlined" style="font-size: 48px; opacity: 0.3; margin-bottom: 15px;">receipt</span>
+            <p style="margin: 0 0 5px 0;">Nenhum frete em andamento.</p>
+            <small>Preencha os dados ao lado e clique em<br>"Pegar Nota do Frete" para iniciar.</small>
         </div>
-
-        <button type="submit" class="btn-submit">Lançar Frete no Saldo</button>
-    </form>
+        {% endif %}
+    </div>
 </div>
 
-<!-- Atualizações do Dia -->
-<div class="form-section" id="secao-atualizacoes">
-    <div class="section-title">
-        <span style="display: flex; align-items: center; gap: 8px;"><span class="material-symbols-outlined">schedule</span> Atualizações do Dia</span>
-        <span style="font-size: 0.8em; color: var(--texto-mudo);">Dia {{ "%02d"|format(jogador.dias_trabalhados) }} • Ciclo {{ jogador.ciclo }}</span>
+<!-- ============================================== -->
+<!-- 2. FULL WIDTH: REGISTRAR DIA (LINHA DO TEMPO)  -->
+<!-- ============================================== -->
+<div class="form-section">
+    <div class="section-title" style="font-weight: bold; font-family: 'Oswald', sans-serif;">
+        <span style="display: flex; align-items: center; gap: 8px;"><span class="material-symbols-outlined">schedule</span> Registrar Dia</span>
+        <span style="font-size: 0.7em; color: var(--texto-mudo); font-family: 'Inter', sans-serif; font-weight: normal; text-transform: none;">Dia {{ "%02d"|format(jogador.dias_trabalhados) }} • Mês {{ jogador.ciclo }}</span>
     </div>
     
     <form action="/registrar_evento" method="POST" id="formEvento">
         <div class="form-grid">
+            <div class="form-group"><label>Hora</label><input type="time" name="hora" required></div>
             <div class="form-group">
-                <label>Hora</label>
-                <input type="time" name="hora" required>
-            </div>
-            <div class="form-group">
-                <label>O que aconteceu?</label>
+                <label>Categoria</label>
                 <select name="tipo" required>
                     <option value="Inicio da Jornada">Inicio da Jornada</option>
                     <option value="Em serviço">Em serviço</option>
                     <option value="Parada">Parada</option>
                     <option value="Refeição">Refeição</option>
                     <option value="Abastecimento">Abastecimento</option>
+                    <option value="Manutenção">Manutenção</option>
                     <option value="Pedágio">Pedágio</option>
+                    <option value="Tag de Pedágio">Tag de Pedágio</option>
                     <option value="Carregamento">Carregamento</option>
                     <option value="Descarregamento">Descarregamento</option>
                     <option value="Descanso/11h">Descanso/11h</option>
@@ -165,346 +177,243 @@
                     <option value="Fim da Jornada">Fim da Jornada</option>
                 </select>
             </div>
-            <div class="form-group">
-                <label>Cidade</label>
-                <input type="text" name="cidade" placeholder="Ex: Bakersfield" required>
-            </div>
-            <div class="form-group">
-                <label>Valor ({{ jogador.moeda }})</label>
-                <input type="text" id="valor_evento" name="valor" inputmode="numeric" placeholder="0,00">
-            </div>
+            <div class="form-group"><label>Cidade</label><input type="text" name="cidade" placeholder="Ex: Munique" required></div>
+            <div class="form-group"><label>Valor ({{ jogador.moeda }})</label><input type="text" id="valor_evento" name="valor" inputmode="numeric" placeholder="0,00"></div>
             <div class="form-group">
                 <div class="custom-checkbox-container">
-                    <label class="custom-checkbox">
-                        <input type="checkbox" name="em_servico" id="chkEmServico" checked>
-                        <span class="checkmark"></span>
-                        Em serviço?
-                    </label>
+                    <label class="custom-checkbox"><input type="checkbox" name="em_servico" id="chkEmServico" checked><span class="checkmark"></span> Em serviço?</label>
                 </div>
             </div>
-            <div class="form-group full-width">
-                <label>Observação</label>
-                <input type="text" name="observacao" placeholder="Ex: Almoço no posto de gasolina">
-            </div>
+            <div class="form-group full-width"><label>Observação</label><input type="text" name="observacao" placeholder="Ex: Paragem na estação de serviço"></div>
         </div>
-        <button type="submit" class="btn-add-event" style="display: flex; justify-content: center; align-items: center; gap: 8px;">
-            <span class="material-symbols-outlined" style="font-size: 18px;">add_circle</span> Registrar Ocorrido
-        </button>
+        <button type="submit" class="btn-add-event" style="display: flex; justify-content: center; align-items: center; gap: 8px; font-family: 'Oswald', sans-serif;"><span class="material-symbols-outlined" style="font-size: 18px;">add_circle</span> Registrar Ocorrido</button>
     </form>
 
     <div style="margin-top: 24px; border-top: 1px solid var(--borda); padding-top: 16px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-            <span style="font-size: 0.85em; font-weight: 700; color: var(--texto-mudo); text-transform: uppercase; letter-spacing: 0.5px;">Linha do Tempo Hoje</span>
-            <span style="font-size: 0.8em; color: var(--dourado);" id="lblTotalEventos">{{ eventos_pendentes | length }} evento(s)</span>
+            <span style="font-size: 0.9em; font-family: 'Oswald', sans-serif; color: var(--texto-mudo); text-transform: uppercase; letter-spacing: 0.5px;">Linha do Tempo Hoje</span>
+            <span style="font-size: 0.85em; font-family: 'Oswald', sans-serif; color: var(--dourado);" id="lblTotalEventos">{{ eventos_pendentes | length }} evento(s)</span>
         </div>
 
         <div class="log-timeline" id="containerTimeline">
             {% for ev in eventos_pendentes %}
-            <!-- Usa a fase gravada no evento (ev.fase_jogador) e não a do jogador atual -->
             <div class="log-card {% if ev.em_servico and ev.fase_jogador < 3 %}in-service{% endif %}" id="evento-card-{{ ev.id }}">
                 <div class="log-left">
-                    <span class="log-time">{{ ev.hora }}</span>
+                    <span class="log-time" style="font-family: 'Oswald', sans-serif;">{{ ev.hora }}</span>
                     <div>
-                        <div>
-                            <span class="log-title">{{ ev.tipo }}</span>
-                            <span class="log-city" style="display: inline-flex; align-items: center; gap: 2px;"><span class="material-symbols-outlined" style="font-size: 14px;">location_on</span> {{ ev.cidade }}</span>
-                        </div>
-                        {% if ev.observacao %}
-                        <div class="log-obs">"{{ ev.observacao }}"</div>
-                        {% endif %}
+                        <div><span class="log-title">{{ ev.tipo }}</span> <span class="log-city" style="display: inline-flex; align-items: center; gap: 2px;"><span class="material-symbols-outlined" style="font-size: 14px;">location_on</span> {{ ev.cidade }}</span></div>
+                        {% if ev.observacao %}<div class="log-obs">"{{ ev.observacao }}"</div>{% endif %}
                     </div>
                 </div>
-
+                
                 <div class="log-right">
-                    {% if ev.em_servico %}
-                        {% if ev.fase_jogador < 3 %}
-                            <span class="badge-status badge-service">Em Serviço</span>
-                            <span class="log-value green">{{ ev.valor | moeda(jogador.moeda) }}</span>
-                        {% else %}
-                            <span class="badge-status badge-particular">Em Serviço</span>
-                            <span class="log-value red">- {{ ev.valor | moeda(jogador.moeda) }}</span>
-                        {% endif %}
-                    {% elif ev.valor > 0 %}
-                        <span class="badge-status badge-particular">Particular</span>
-                        <span class="log-value red">- {{ ev.valor | moeda(jogador.moeda) }}</span>
+                    {% set motorista_paga = not ev.em_servico or ev.fase_jogador >= 3 or (ev.fase_jogador == 1 and ev.tipo in ['Multa', 'Acidente']) or (ev.fase_jogador == 2 and ev.tipo in ['Multa', 'Acidente', 'Abastecimento', 'Manutenção', 'Tag de Pedágio']) %}
+                    
+                    {% if not motorista_paga %}
+                        <span class="badge-status" style="background: rgba(34, 197, 94, 0.15); color: var(--verde); border: 1px solid rgba(34, 197, 94, 0.3); padding: 4px 8px; border-radius: 4px; font-size: 0.7em; font-weight: bold; font-family: 'Oswald', sans-serif; text-transform: uppercase; white-space: nowrap;">Pago pela Empresa</span> 
+                        <span class="log-value green" style="font-family: 'Oswald', sans-serif; white-space: nowrap;">{{ ev.valor | moeda(jogador.moeda) }}</span>
                     {% else %}
-                        <span class="badge-status badge-particular">Particular</span>
-                        <span class="log-value muted">{{ ev.valor | moeda(jogador.moeda) }}</span>
+                        {% if ev.em_servico %}
+                            <span class="badge-status" style="background: rgba(239, 68, 68, 0.15); color: var(--vermelho); border: 1px solid rgba(239, 68, 68, 0.3); padding: 4px 8px; border-radius: 4px; font-size: 0.7em; font-weight: bold; font-family: 'Oswald', sans-serif; text-transform: uppercase; white-space: nowrap;">Pago pelo Motorista</span>
+                        {% else %}
+                            <span class="badge-status" style="background: rgba(189, 165, 86, 0.15); color: #cabe4f; border: 1px solid rgba(189, 165, 86, 0.3); padding: 4px 8px; border-radius: 4px; font-size: 0.7em; font-weight: bold; font-family: 'Oswald', sans-serif; text-transform: uppercase; white-space: nowrap;">Particular</span>
+                        {% endif %}
+                        
+                        {% if ev.valor > 0 %}
+                            <span class="log-value red" style="font-family: 'Oswald', sans-serif; white-space: nowrap;">- {{ ev.valor | moeda(jogador.moeda) }}</span>
+                        {% else %}
+                            <span class="log-value muted" style="font-family: 'Oswald', sans-serif; white-space: nowrap;">{{ ev.valor | moeda(jogador.moeda) }}</span>
+                        {% endif %}
                     {% endif %}
-
+                    
                     <form action="/excluir_evento/{{ ev.id }}" method="POST" style="margin: 0;">
-                        <button type="submit" class="btn-icon-delete" title="Remover evento">
-                            <span class="material-symbols-outlined" style="font-size: 18px;">close</span>
-                        </button>
+                        <button type="submit" class="btn-icon-delete" title="Remover evento"><span class="material-symbols-outlined" style="font-size: 18px;">close</span></button>
                     </form>
                 </div>
             </div>
             {% else %}
-            <div class="empty-log-msg" style="text-align: center; color: var(--texto-mudo); padding: 20px; background: var(--bg-input); border-radius: 6px; border: 1px dashed var(--borda); font-size: 0.88em;">
-                Nenhum ocorrido registrado para o dia de hoje.
-            </div>
+            <div class="empty-log-msg" style="text-align: center; color: var(--texto-mudo); padding: 20px; background: var(--bg-input); border-radius: 6px; border: 1px dashed var(--borda); font-size: 0.88em;">Nenhum ocorrido registado para o dia de hoje.</div>
             {% endfor %}
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; border-top: 1px solid var(--borda); padding-top: 15px;">
-                <form action="/lancar_fds" method="POST" style="margin: 0;">
-                    <button type="submit" title="Avança 2 dias inativos cobrando custos de hotel e comida" style="width: 100%; background: transparent; border: 1px solid #3b82f6; color: #3b82f6; padding: 10px; border-radius: 6px; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 6px; font-weight: bold; transition: 0.2s;">
-                        <span class="material-symbols-outlined" style="font-size: 18px;">weekend</span> Fim de Semana
-                    </button>
-                </form>
-                <form action="/caminhao_tombado" method="POST" id="formAcidente" style="margin: 0;">
-                    <button type="button" onclick="abrirModalAcidente()" style="width: 100%; background: transparent; border: 1px solid var(--vermelho); color: var(--vermelho); padding: 10px; border-radius: 6px; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 6px; font-weight: bold; transition: 0.2s;">
-                        <span class="material-symbols-outlined" style="font-size: 18px;">car_crash</span> Acidente Grave
-                    </button>
-                </form>
-            </div>
         </div>
 
         <form action="/lancar_dia" method="POST" id="formLancarDia" style="{% if not eventos_pendentes %}display: none;{% endif %}">
-            <button type="submit" class="btn-lancar-dia">
-                <span class="material-symbols-outlined" style="font-size: 18px;">sports_score</span> Encerrar Jornada e Lançar Dia
-            </button>
-            <div style="display: flex; gap: 10px; margin-top: 15px; border-top: 1px solid var(--borda); padding-top: 15px;">
-        </div>
+            <button type="submit" class="btn-lancar-dia" style="font-family: 'Oswald', sans-serif;"><span class="material-symbols-outlined" style="font-size: 18px;">sports_score</span> Encerrar Jornada e Lançar Dia</button>
         </form>
+        
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; border-top: 1px solid var(--borda); padding-top: 15px;">
+            <form action="/lancar_fds" method="POST" style="margin: 0;">
+                <button type="submit" title="Avança 2 dias inativos cobrando custos de hotel e comida" style="width: 100%; background: transparent; border: 1px solid #3b82f6; color: #3b82f6; padding: 10px; border-radius: 6px; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 6px; font-weight: bold; transition: 0.2s; font-family: 'Oswald', sans-serif; text-transform: uppercase;">
+                    <span class="material-symbols-outlined" style="font-size: 18px;">weekend</span> Fim de Semana
+                </button>
+            </form>
+            <form action="/caminhao_tombado" method="POST" id="formAcidente" style="margin: 0;">
+                <button type="button" onclick="abrirModalAcidente()" style="width: 100%; background: transparent; border: 1px solid var(--vermelho); color: var(--vermelho); padding: 10px; border-radius: 6px; cursor: pointer; display: flex; justify-content: center; align-items: center; gap: 6px; font-weight: bold; transition: 0.2s; font-family: 'Oswald', sans-serif; text-transform: uppercase;">
+                    <span class="material-symbols-outlined" style="font-size: 18px;">car_crash</span> Acidente Grave
+                </button>
+            </form>
+        </div>
     </div>
 </div>
 
-<!-- Histórico de Dias -->
-<div class="table-section">
-    <div class="section-title">
-        <span style="display: flex; align-items: center; gap: 8px;"><span class="material-symbols-outlined">calendar_month</span> Histórico de Dias</span>
-        <button type="button" class="btn-delete" style="font-size: 11px; display: flex; align-items: center; gap: 4px;" onclick="abrirModalLimparHistorico()">
-            <span class="material-symbols-outlined" style="font-size: 14px;">delete_sweep</span> Limpar Tudo
-        </button>
-    </div>
+<!-- ============================================== -->
+<!-- 3. GRID INFERIOR: HISTÓRICO DIAS vs ENTREGAS   -->
+<!-- ============================================== -->
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); gap: 20px; margin-bottom: 20px; align-items: start;">
     
-    {% for dia in historico_dias %}
-    <details class="day-accordion">
-        <summary>
-            <div class="day-summary-title">
-                <strong style="color: var(--dourado);">Dia {{ "%02d"|format(dia.numero_dia) }}</strong> 
-                <span style="color: var(--texto-mudo); font-size: 0.85em;">(Ciclo {{ dia.ciclo }})</span>
-            </div>
-            <div class="day-summary-badges">
-                <span class="day-badge" style="border-color: rgba(239, 68, 68, 0.3);">
-                    Custo: <strong style="color: var(--vermelho);">{{ dia.custo_total | moeda(jogador.moeda) }}</strong>
-                </span>
-                <button type="button" class="btn-icon-delete" title="Excluir este dia" onclick="abrirModalExcluirDia({{ dia.id }}, {{ dia.numero_dia }})">
-                    <span class="material-symbols-outlined" style="font-size: 18px; color: var(--vermelho);">delete</span>
-                </button>
-            </div>
-        </summary>
-
-        <div style="padding: 14px; background: rgba(0,0,0,0.15);">
-            <div class="log-timeline">
-                {% for ev in dia.eventos %}
-                <!-- Mesma correção para os eventos históricos -->
-                <div class="log-card {% if ev.em_servico and ev.fase_jogador < 3 %}in-service{% endif %}" style="background: var(--bg-card);">
-                    <div class="log-left">
-                        <span class="log-time">{{ ev.hora }}</span>
-                        <div>
+    <!-- Histórico de Dias -->
+    <div class="table-section" style="margin-bottom: 0;">
+        <div class="section-title" style="font-weight: bold; font-family: 'Oswald', sans-serif;">
+            <span style="display: flex; align-items: center; gap: 8px;"><span class="material-symbols-outlined">calendar_month</span> Histórico de Dias</span>
+            <button type="button" class="btn-delete" style="display: flex; align-items: center; gap: 4px;" onclick="abrirModalLimparHistorico()"><span class="material-symbols-outlined" style="font-size: 14px;">delete_sweep</span> Limpar</button>
+        </div>
+        
+        {% for dia in historico_dias %}
+        <details class="day-accordion">
+            <summary>
+                <div class="day-summary-title"><strong style="color: var(--dourado);">Dia {{ "%02d"|format(dia.numero_dia) }}</strong> <span style="color: var(--texto-mudo); font-size: 0.85em;">(Mês {{ dia.ciclo }})</span></div>
+                <div class="day-summary-badges">
+                    <span class="day-badge" style="border-color: rgba(239, 68, 68, 0.3);">Custo: <strong style="color: var(--vermelho);">{{ dia.custo_total | moeda(jogador.moeda) }}</strong></span>
+                    <button type="button" class="btn-icon-delete" title="Excluir este dia" onclick="abrirModalExcluirDia({{ dia.id }}, {{ dia.numero_dia }})"><span class="material-symbols-outlined" style="font-size: 18px; color: var(--vermelho);">delete</span></button>
+                </div>
+            </summary>
+            <div style="padding: 14px; background: rgba(0,0,0,0.15);">
+                <div class="log-timeline">
+                    {% for ev in dia.eventos %}
+                    <div class="log-card {% if ev.em_servico and ev.fase_jogador < 3 %}in-service{% endif %}" style="background: var(--bg-card);">
+                        <div class="log-left">
+                            <span class="log-time" style="font-family: 'Oswald', sans-serif;">{{ ev.hora }}</span>
                             <div>
-                                <span class="log-title">{{ ev.tipo }}</span>
-                                <span class="log-city" style="display: inline-flex; align-items: center; gap: 2px;"><span class="material-symbols-outlined" style="font-size: 14px;">location_on</span> {{ ev.cidade }}</span>
+                                <div><span class="log-title">{{ ev.tipo }}</span> <span class="log-city" style="display: inline-flex; align-items: center; gap: 2px;"><span class="material-symbols-outlined" style="font-size: 14px;">location_on</span> {{ ev.cidade }}</span></div>
+                                {% if ev.observacao %}<div class="log-obs">"{{ ev.observacao }}"</div>{% endif %}
                             </div>
-                            {% if ev.observacao %}
-                            <div class="log-obs">"{{ ev.observacao }}"</div>
+                        </div>
+                        
+                        <div class="log-right">
+                            {% set motorista_paga = not ev.em_servico or ev.fase_jogador >= 3 or (ev.fase_jogador == 1 and ev.tipo in ['Multa', 'Acidente']) or (ev.fase_jogador == 2 and ev.tipo in ['Multa', 'Acidente', 'Abastecimento', 'Manutenção', 'Tag de Pedágio']) %}
+                            
+                            {% if not motorista_paga %}
+                                <span class="badge-status" style="background: rgba(34, 197, 94, 0.15); color: var(--verde); border: 1px solid rgba(34, 197, 94, 0.3); padding: 4px 8px; border-radius: 4px; font-size: 0.7em; font-weight: bold; font-family: 'Oswald', sans-serif; text-transform: uppercase; white-space: nowrap;">Pago pela Empresa</span> 
+                                <span class="log-value green" style="font-family: 'Oswald', sans-serif; white-space: nowrap;">{{ ev.valor | moeda(jogador.moeda) }}</span>
+                            {% else %}
+                                {% if ev.em_servico %}
+                                    <span class="badge-status" style="background: rgba(239, 68, 68, 0.15); color: var(--vermelho); border: 1px solid rgba(239, 68, 68, 0.3); padding: 4px 8px; border-radius: 4px; font-size: 0.7em; font-weight: bold; font-family: 'Oswald', sans-serif; text-transform: uppercase; white-space: nowrap;">Pago pelo Motorista</span>
+                                {% else %}
+                                    <span class="badge-status" style="background: rgba(189, 165, 86, 0.15); color: #cabe4f; border: 1px solid rgba(189, 165, 86, 0.3); padding: 4px 8px; border-radius: 4px; font-size: 0.7em; font-weight: bold; font-family: 'Oswald', sans-serif; text-transform: uppercase; white-space: nowrap;">Particular</span>
+                                {% endif %}
+                                
+                                {% if ev.valor > 0 %}
+                                    <span class="log-value red" style="font-family: 'Oswald', sans-serif; white-space: nowrap;">- {{ ev.valor | moeda(jogador.moeda) }}</span>
+                                {% else %}
+                                    <span class="log-value muted" style="font-family: 'Oswald', sans-serif; white-space: nowrap;">{{ ev.valor | moeda(jogador.moeda) }}</span>
+                                {% endif %}
                             {% endif %}
                         </div>
                     </div>
-
-                    <div class="log-right">
-                        {% if ev.em_servico %}
-                            {% if ev.fase_jogador < 3 %}
-                                <span class="badge-status badge-service">Em Serviço</span>
-                                <span class="log-value green">{{ ev.valor | moeda(jogador.moeda) }}</span>
-                            {% else %}
-                                <span class="badge-status badge-particular">Em Serviço</span>
-                                <span class="log-value red">- {{ ev.valor | moeda(jogador.moeda) }}</span>
-                            {% endif %}
-                        {% elif ev.valor > 0 %}
-                            <span class="badge-status badge-particular">Particular</span>
-                            <span class="log-value red">- {{ ev.valor | moeda(jogador.moeda) }}</span>
-                        {% else %}
-                            <span class="badge-status badge-particular">Particular</span>
-                            <span class="log-value muted">{{ ev.valor | moeda(jogador.moeda) }}</span>
-                        {% endif %}
-                    </div>
+                    {% else %}
+                    <div style="text-align: center; color: var(--texto-mudo); padding: 10px; font-size: 0.85em;">Sem registos detalhados neste dia.</div>
+                    {% endfor %}
                 </div>
-                {% else %}
-                <div style="text-align: center; color: var(--texto-mudo); padding: 10px; font-size: 0.85em;">
-                    Sem registros detalhados neste dia.
-                </div>
-                {% endfor %}
             </div>
-        </div>
-    </details>
-    {% else %}
-    <p style="text-align: center; color: var(--texto-mudo); padding: 20px; margin: 0; background: var(--bg-input); border-radius: 6px; border: 1px dashed var(--borda); font-size: 0.88em;">
-        Nenhum dia finalizado no histórico até o momento.
-    </p>
-    {% endfor %}
-    <p style="text-align: center; color: var(--texto-mudo); font-size: 0.8em; margin-top: 14px;">
-        <i>Exibindo apenas os 7 dias mais recentes.</i>
-    </p>
-</div>
-
-<!-- Histórico de Entregas -->
-<div class="table-section">
-    <div class="section-title">
-        <span style="display: flex; align-items: center; gap: 8px;"><span class="material-symbols-outlined">local_shipping</span> Histórico de Entregas</span>
-        <button type="button" class="btn-delete" style="font-size: 11px; display: flex; align-items: center; gap: 4px;" onclick="abrirModalLimparViagens()">
-            <span class="material-symbols-outlined" style="font-size: 14px;">delete_sweep</span> Limpar Tudo
-        </button>
+        </details>
+        {% else %}
+        <p style="text-align: center; color: var(--texto-mudo); padding: 20px; margin: 0; background: var(--bg-input); border-radius: 6px; border: 1px dashed var(--borda); font-size: 0.88em;">Nenhum dia finalizado no histórico até o momento.</p>
+        {% endfor %}
     </div>
-    <table>
-        <thead>
-            <tr>
-                <th>Rota</th>
-                <th>Distância</th>
-                <th>Frete Bruto</th>
-                <th>Avaria</th>
-                <th>Valor Recebido</th>
-                <th>Anotações</th>
-                <th>Ação</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for viagem in viagens %}
-            <tr>
-                <td><strong>{{ viagem.origem }}</strong> <span class="material-symbols-outlined" style="font-size: 14px; vertical-align: middle;">arrow_right_alt</span> <strong>{{ viagem.destino }}</strong></td>
-                <td>{{ viagem.distancia_km | numero }} km</td>
-                <td>{{ viagem.frete_bruto | moeda(jogador.moeda) }}</td>
-                <td>
-                    {% if viagem.avaria_pct > 0 %}
-                        <span style="color: var(--vermelho);">{{ viagem.avaria_pct | numero(1) }}%</span>
+
+    <!-- Histórico de Entregas -->
+    <div class="table-section" style="margin-bottom: 0;">
+        <div class="section-title" style="font-weight: bold; font-family: 'Oswald', sans-serif;">
+            <span style="display: flex; align-items: center; gap: 8px;"><span class="material-symbols-outlined">local_shipping</span> Histórico de Entregas</span>
+            <button type="button" class="btn-delete" style="display: flex; align-items: center; gap: 4px;" onclick="abrirModalLimparViagens()"><span class="material-symbols-outlined" style="font-size: 14px;">delete_sweep</span> Limpar</button>
+        </div>
+        <div style="overflow-x: auto;">
+            <table>
+                <thead><tr><th style="font-family: 'Oswald', sans-serif;">Rota</th><th style="font-family: 'Oswald', sans-serif;">Dist.</th><th style="font-family: 'Oswald', sans-serif;">Líquido</th><th style="font-family: 'Oswald', sans-serif;">Ação</th></tr></thead>
+                <tbody>
+                    {% for viagem in viagens %}
+                    <tr>
+                        <td><strong>{{ viagem.origem }}</strong> <span class="material-symbols-outlined" style="font-size: 14px; vertical-align: middle;">arrow_right_alt</span> <strong>{{ viagem.destino }}</strong></td>
+                        <td>{{ viagem.distancia_km | numero }} km</td>
+                        <td>
+                            {% if viagem.comissao_recebida < 0 %}<span style="color: var(--vermelho); font-weight: bold; font-family: 'Oswald', sans-serif;">{{ viagem.comissao_recebida | moeda(jogador.moeda) }}</span>
+                            {% else %}<span style="color: var(--dourado); font-weight: bold; font-family: 'Oswald', sans-serif;">+ {{ viagem.comissao_recebida | moeda(jogador.moeda) }}</span>{% endif %}
+                        </td>
+                        <td><button type="button" class="btn-delete" onclick="abrirModalExcluirViagem({{ viagem.id }})"><span class="material-symbols-outlined" style="font-size: 16px;">delete</span></button></td>
+                    </tr>
                     {% else %}
-                        <span style="color: var(--texto-mudo);">0%</span>
-                    {% endif %}
-                </td>
-                <td>
-                    {% if viagem.comissao_recebida < 0 %}
-                        <span style="color: var(--vermelho); font-weight: bold;">{{ viagem.comissao_recebida | moeda(jogador.moeda) }}</span>
-                    {% else %}
-                        <span style="color: var(--dourado); font-weight: bold;">+ {{ viagem.comissao_recebida | moeda(jogador.moeda) }}</span>
-                    {% endif %}
-                </td>
-                <td style="color: var(--texto-mudo);">{{ viagem.anotacoes or '-' }}</td>
-                <td>
-                    <button type="button" class="btn-delete" onclick="abrirModalExcluirViagem({{ viagem.id }})">Excluir</button>
-                </td>
-            </tr>
-            {% else %}
-            <tr>
-                <td colspan="7" style="text-align: center; color: var(--texto-mudo); padding: 20px;">
-                    Nenhuma viagem lançada até o momento.
-                </td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    </table>
-    <p style="text-align: center; color: var(--texto-mudo); font-size: 0.8em; margin-top: 14px;">
-        <i>Exibindo apenas as 7 viagens mais recentes.</i>
-    </p>
+                    <tr><td colspan="4" style="text-align: center; color: var(--texto-mudo); padding: 20px;">Nenhuma viagem lançada.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
 </div>
 
 <!-- ============================================== -->
 <!-- ÁREA DE MODAIS (Pop-ups de confirmação)        -->
 <!-- ============================================== -->
-
-<!-- 1. Modal Excluir 1 Viagem -->
-<div id="modalExcluirViagem" class="modal-overlay">
-    <div class="modal-card">
-        <h3>Estornar Viagem?</h3>
-        <p>Tem certeza que deseja excluir esta entrega? O valor será estornado do seu saldo.</p>
-        <div class="modal-actions">
-            <button type="button" class="btn-modal-cancelar" onclick="fecharModalExcluirViagem()">Cancelar</button>
-            <form id="formExcluirViagem" method="POST" style="margin: 0;">
-                <button type="submit" class="btn-modal-confirmar">Confirmar Exclusão</button>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- 2. Modal Limpar TODAS as Viagens (2 Etapas) -->
-<div id="modalLimparViagens" class="modal-overlay">
-    <div class="modal-card" style="border-top-color: #ef4444;">
-        <h3 style="color: #ef4444;">⚠️ Atenção Extrema!</h3>
-        <p>Você está prestes a apagar <strong>TODOS</strong> os registros de entregas. O dinheiro ganho/perdido será estornado do saldo. Digite <strong>LIMPAR</strong> abaixo.</p>
-        <input type="text" id="inputConfirmaLimpezaViagens" placeholder="Digite LIMPAR" autocomplete="off" style="width: 80%; margin-bottom: 20px; text-align: center; font-weight: bold; text-transform: uppercase;">
-        <div class="modal-actions">
-            <button type="button" class="btn-modal-cancelar" onclick="fecharModalLimparViagens()">Cancelar</button>
-            <form action="/limpar_viagens" method="POST" style="margin: 0;">
-                <button type="submit" id="btnConfirmarLimparViagens" class="btn-modal-confirmar" style="opacity: 0.4; cursor: not-allowed;" disabled>Limpar Tudo</button>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- 3. Modal Excluir 1 Dia -->
-<div id="modalExcluirDia" class="modal-overlay">
-    <div class="modal-card">
-        <h3>Estornar Dia <span id="txtNumeroDiaModal"></span>?</h3>
-        <p>Tem certeza que deseja excluir este dia? Todos os custos debitados nele voltarão para o seu saldo.</p>
-        <div class="modal-actions">
-            <button type="button" class="btn-modal-cancelar" onclick="fecharModalExcluirDia()">Cancelar</button>
-            <form id="formExcluirDia" method="POST" style="margin: 0;">
-                <button type="submit" class="btn-modal-confirmar">Confirmar Exclusão</button>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- 4. Modal Limpar TODOS os Dias (2 Etapas) -->
-<div id="modalLimparHistorico" class="modal-overlay">
-    <div class="modal-card" style="border-top-color: #ef4444;">
-        <h3 style="color: #ef4444;">⚠️ Atenção Extrema!</h3>
-        <p>Você está prestes a apagar <strong>TODOS</strong> os dias do histórico. Os custos debitados neles serão estornados. Para prosseguir, digite <strong>LIMPAR</strong> abaixo.</p>
-        <input type="text" id="inputConfirmaLimpeza" placeholder="Digite LIMPAR" autocomplete="off" style="width: 80%; margin-bottom: 20px; text-align: center; font-weight: bold; text-transform: uppercase;">
-        <div class="modal-actions">
-            <button type="button" class="btn-modal-cancelar" onclick="fecharModalLimparHistorico()">Cancelar</button>
-            <form action="/limpar_historico" method="POST" style="margin: 0;">
-                <button type="submit" id="btnConfirmarLimpar" class="btn-modal-confirmar" style="opacity: 0.4; cursor: not-allowed;" disabled>Limpar Tudo</button>
-            </form>
-        </div>
-    </div>
-</div>
-
-<!-- 5. Modal Confirmar Voltar Dia -->
-<div id="modalVoltarDia" class="modal-overlay">
-    <div class="modal-card">
-        <h3>Voltar no Tempo?</h3>
-        <p>Tem certeza que deseja recuar um dia? Os eventos não encerrados voltarão para a tela inicial e os custos do dia serão estornados.</p>
-        
-        <div class="custom-checkbox-container" style="margin: 15px 0;">
-            <label class="custom-checkbox" style="font-size: 0.9em; color: var(--texto-mudo);">
-                <input type="checkbox" id="chkNaoPerguntarMais">
-                <span class="checkmark"></span>
-                Não perguntar novamente
-            </label>
-        </div>
-
-        <div class="modal-actions">
-            <button type="button" class="btn-modal-cancelar" onclick="fecharModalVoltarDia()">Cancelar</button>
-            <button type="button" class="btn-modal-confirmar" onclick="confirmarVoltarDiaExecutar()">Confirmar</button>
-        </div>
-    </div>
-</div>
-
-<!-- 6. Modal Confirmar Acidente Grave -->
-<div id="modalAcidente" class="modal-overlay">
-    <div class="modal-card">
-        <h3 style="color: var(--vermelho); display: flex; align-items: center; gap: 8px;">
-            <span class="material-symbols-outlined">car_crash</span> Acidente Grave!
+<div id="modalCancelarFrete" class="modal-overlay">
+    <div class="modal-card" style="border-top-color: var(--vermelho);">
+        <h3 style="color: var(--vermelho); font-family: 'Oswald', sans-serif; display: flex; align-items: center; justify-content: center; gap: 8px;">
+            <span class="material-symbols-outlined">warning</span> Cancelar Frete
         </h3>
-        <p>Seu motorista será demitido, <strong>a empresa atual será bloqueada por 30 dias</strong>, e você passará <strong>10 DIAS inativo</strong> pagando todos os custos de alimentação e hotel.</p>
-        <p style="margin-top: 10px;">Deseja assumir o prejuízo e continuar?</p>
-        
+        <p>Tem certeza que deseja rasgar esta nota e cancelar o transporte em andamento? Todos os dados deste frete serão perdidos.</p>
         <div class="modal-actions" style="margin-top: 25px;">
-            <button type="button" class="btn-modal-cancelar" onclick="fecharModalAcidente()">Cancelar</button>
-            <button type="button" class="btn-modal-confirmar" style="background: var(--vermelho); color: white;" onclick="confirmarAcidente()">Sim, Tombei o Caminhão</button>
+            <button type="button" class="btn-modal-cancelar" onclick="fecharModalCancelarFrete()">Voltar</button>
+            <form action="/cancelar_frete" method="POST" style="margin: 0;">
+                <button type="submit" class="btn-modal-confirmar" style="background: var(--vermelho); color: white;">Sim, Cancelar Frete</button>
+            </form>
         </div>
     </div>
 </div>
+
+<div id="modalFinalizarFrete" class="modal-overlay">
+    <div class="modal-card" style="max-width: 500px;">
+        <h3 style="display: flex; align-items: center; gap: 8px; justify-content: center; color: var(--dourado); font-family: 'Oswald', sans-serif;">
+            <span class="material-symbols-outlined">task_alt</span> Finalizar Entrega
+        </h3>
+        <p>A entrega foi um sucesso? Preencha os dados abaixo para receber o pagamento.</p>
+        <form action="/finalizar_frete" method="POST" id="formFinalizarFrete">
+            <div class="form-grid" style="margin-bottom: 20px;">
+                <div class="form-group" style="text-align: left;"><label>Hora de Chegada</label><input type="time" name="hora_chegada" required></div>
+                <div class="form-group" style="text-align: left;"><label>Avaria na Carga (%)</label><input type="text" id="modal_avaria_pct" name="avaria_pct" value="0" placeholder="0"></div>
+            </div>
+            
+            <div class="preview-box">
+                <div class="preview-item">
+                    <div style="font-size: 0.8em; color: var(--texto-mudo); margin-bottom: 4px; white-space: nowrap;">
+                        Comissão (<b id="modalPctComissao" style="font-weight: normal;"></b>)
+                    </div>
+                    <strong id="modalPrevBruta">{{ jogador.moeda }} 0,00</strong>
+                </div>
+                <div class="preview-item">
+                    <div style="font-size: 0.8em; color: var(--texto-mudo); margin-bottom: 4px;">
+                        Desconto
+                    </div>
+                    <strong id="modalPrevDesconto" style="color: var(--vermelho);">{{ jogador.moeda }} 0,00</strong>
+                </div>
+                <div class="preview-item">
+                    <div style="font-size: 0.8em; color: var(--texto-mudo); margin-bottom: 4px;">
+                        Líquido
+                    </div>
+                    <strong id="modalPrevLiquida">{{ jogador.moeda }} 0,00</strong>
+                </div>
+            </div>
+            <div class="modal-actions" style="margin-top: 25px;">
+                <button type="button" class="btn-modal-cancelar" onclick="fecharModalFinalizarFrete()">Voltar</button>
+                <button type="submit" class="btn-modal-confirmar" style="background: var(--dourado); color: black;">Receber Pagamento</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div id="modalExcluirViagem" class="modal-overlay"><div class="modal-card"><h3 style="font-family: 'Oswald', sans-serif;">Estornar Viagem?</h3><p>Tem certeza que deseja excluir esta entrega? O valor será estornado do seu saldo.</p><div class="modal-actions"><button type="button" class="btn-modal-cancelar" onclick="fecharModalExcluirViagem()">Cancelar</button><form id="formExcluirViagem" method="POST" style="margin: 0;"><button type="submit" class="btn-modal-confirmar">Confirmar Exclusão</button></form></div></div></div>
+<div id="modalLimparViagens" class="modal-overlay"><div class="modal-card" style="border-top-color: #ef4444;"><h3 style="color: #ef4444; font-family: 'Oswald', sans-serif;">⚠️ Atenção Extrema!</h3><p>Você está prestes a apagar <strong>TODOS</strong> os registos de entregas. O dinheiro ganho/perdido será estornado do saldo. Digite <strong>LIMPAR</strong> abaixo.</p><input type="text" id="inputConfirmaLimpezaViagens" placeholder="Digite LIMPAR" autocomplete="off" style="width: 80%; margin-bottom: 20px; text-align: center; font-weight: bold; text-transform: uppercase;"><div class="modal-actions"><button type="button" class="btn-modal-cancelar" onclick="fecharModalLimparViagens()">Cancelar</button><form action="/limpar_viagens" method="POST" style="margin: 0;"><button type="submit" id="btnConfirmarLimparViagens" class="btn-modal-confirmar" style="opacity: 0.4; cursor: not-allowed;" disabled>Limpar Tudo</button></form></div></div></div>
+<div id="modalExcluirDia" class="modal-overlay"><div class="modal-card"><h3 style="font-family: 'Oswald', sans-serif;">Estornar Dia <span id="txtNumeroDiaModal"></span>?</h3><p>Tem certeza que deseja excluir este dia? Todos os custos debitados nele voltarão para o seu saldo.</p><div class="modal-actions"><button type="button" class="btn-modal-cancelar" onclick="fecharModalExcluirDia()">Cancelar</button><form id="formExcluirDia" method="POST" style="margin: 0;"><button type="submit" class="btn-modal-confirmar">Confirmar Exclusão</button></form></div></div></div>
+<div id="modalLimparHistorico" class="modal-overlay"><div class="modal-card" style="border-top-color: #ef4444;"><h3 style="color: #ef4444; font-family: 'Oswald', sans-serif;">⚠️ Atenção Extrema!</h3><p>Você está prestes a apagar <strong>TODOS</strong> os dias do histórico. Os custos debitados neles serão estornados. Para prosseguir, digite <strong>LIMPAR</strong> abaixo.</p><input type="text" id="inputConfirmaLimpeza" placeholder="Digite LIMPAR" autocomplete="off" style="width: 80%; margin-bottom: 20px; text-align: center; font-weight: bold; text-transform: uppercase;"><div class="modal-actions"><button type="button" class="btn-modal-cancelar" onclick="fecharModalLimparHistorico()">Cancelar</button><form action="/limpar_historico" method="POST" style="margin: 0;"><button type="submit" id="btnConfirmarLimpar" class="btn-modal-confirmar" style="opacity: 0.4; cursor: not-allowed;" disabled>Limpar Tudo</button></form></div></div></div>
+<div id="modalVoltarDia" class="modal-overlay"><div class="modal-card"><h3 style="font-family: 'Oswald', sans-serif;">Voltar no Tempo?</h3><p>Tem certeza que deseja recuar um dia? Os eventos não encerrados voltarão para a tela inicial e os custos do dia serão estornados.</p><div class="custom-checkbox-container" style="margin: 15px 0; justify-content: center;"><label class="custom-checkbox" style="font-size: 0.9em; color: var(--texto-mudo);"><input type="checkbox" id="chkNaoPerguntarMais"><span class="checkmark"></span>Não perguntar novamente</label></div><div class="modal-actions"><button type="button" class="btn-modal-cancelar" onclick="fecharModalVoltarDia()">Cancelar</button><button type="button" class="btn-modal-confirmar" onclick="confirmarVoltarDiaExecutar()">Confirmar</button></div></div></div>
+<div id="modalAcidente" class="modal-overlay"><div class="modal-card"><h3 style="color: var(--vermelho); display: flex; align-items: center; gap: 8px; justify-content: center; font-family: 'Oswald', sans-serif;"><span class="material-symbols-outlined">car_crash</span> Acidente Grave!</h3><p>Seu motorista será demitido, <strong>a empresa atual será bloqueada por 30 dias</strong>, e você passará <strong>10 DIAS inativo</strong> pagando todos os custos de alimentação e hotel.</p><p style="margin-top: 10px;">Deseja assumir o prejuízo e continuar?</p><div class="modal-actions" style="margin-top: 25px;"><button type="button" class="btn-modal-cancelar" onclick="fecharModalAcidente()">Cancelar</button><button type="button" class="btn-modal-confirmar" style="background: var(--vermelho); color: white;" onclick="confirmarAcidente()">Sim, Tombei o Camião</button></div></div></div>
 {% endblock %}
 
 {% block scripts %}
@@ -516,14 +425,13 @@
     if (FASE_JOGADOR === 2) PCT_COMISSAO = 0.10;
     else if (FASE_JOGADOR >= 3) PCT_COMISSAO = 0.20;
 
-    const inputFrete = document.getElementById('frete_bruto');
-    const inputDistancia = document.getElementById('distancia_km');
-    const inputAvaria = document.getElementById('avaria_pct');
-    const inputValorEvento = document.getElementById('valor_evento');
+    document.addEventListener('DOMContentLoaded', () => {
+        const txtPct = document.getElementById('txtPctPrev');
+        if (txtPct) txtPct.innerText = (PCT_COMISSAO * 100) + '%';
+    });
 
-    const prevBruta = document.getElementById('prevComissaoBruta');
-    const prevDesconto = document.getElementById('prevDesconto');
-    const prevLiquida = document.getElementById('prevComissaoLiquida');
+    const inputFrete = document.getElementById('frete_bruto');
+    const inputValorEvento = document.getElementById('valor_evento');
 
     function formatarMoedaBR(valor) {
         let sinal = valor < 0 ? '- ' : '';
@@ -536,122 +444,77 @@
         return parseFloat(limpo) || 0;
     }
 
+    function calcularPreviaFreteNovo() {
+        if (!inputFrete) return;
+        const frete = parseBRFloat(inputFrete.value);
+        const comissaoBruta = frete * PCT_COMISSAO;
+        const prevElement = document.getElementById('prevComissao');
+        if (prevElement) {
+            prevElement.textContent = formatarMoedaBR(comissaoBruta);
+        }
+    }
+
     function aplicarMascaraMoedaBR(event) {
         let apenasDigitos = event.target.value.replace(/\D/g, '');
         if (!apenasDigitos) {
             event.target.value = '';
-            calcularPrevia();
+            calcularPreviaFreteNovo(); 
             return;
         }
-
         let valorFloat = parseInt(apenasDigitos, 10) / 100;
         event.target.value = valorFloat.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-        calcularPrevia();
-    }
-
-    function calcularPrevia() {
-        if (!inputFrete) return;
-        const frete = parseBRFloat(inputFrete.value);
-        const avaria = parseBRFloat(inputAvaria.value);
-
-        const comissaoBruta = frete * PCT_COMISSAO;
-        const desconto = frete * (avaria / 100);
-        const saldoDiferenca = comissaoBruta - desconto;
-        let comissaoLiquida = saldoDiferenca < 0 ? saldoDiferenca / 2 : saldoDiferenca;
-
-        prevBruta.textContent = formatarMoedaBR(comissaoBruta);
-        prevDesconto.textContent = `- ${formatarMoedaBR(desconto)}`;
-        prevLiquida.textContent = formatarMoedaBR(comissaoLiquida);
-        prevLiquida.style.color = comissaoLiquida < 0 ? 'var(--vermelho)' : 'var(--dourado)';
+        calcularPreviaFreteNovo(); 
     }
 
     if (inputFrete) inputFrete.addEventListener('input', aplicarMascaraMoedaBR);
-    if (inputDistancia) inputDistancia.addEventListener('input', calcularPrevia);
-    if (inputAvaria) inputAvaria.addEventListener('input', calcularPrevia);
     if (inputValorEvento) inputValorEvento.addEventListener('input', aplicarMascaraMoedaBR);
 
-    /* ========================================= */
-    /* FUNÇÕES DOS MODAIS DE CONFIRMAÇÃO         */
-    /* ========================================= */
-
-    function abrirModalExcluirViagem(idViagem) {
-        document.getElementById('formExcluirViagem').action = '/excluir_viagem/' + idViagem;
-        document.getElementById('modalExcluirViagem').classList.add('active');
+    let freteAtivoValorBruto = 0;
+    function abrirModalFinalizarFrete(valorBruto) {
+        freteAtivoValorBruto = valorBruto;
+        document.getElementById('modalPctComissao').innerText = (PCT_COMISSAO * 100) + '%';
+        document.getElementById('modalFinalizarFrete').classList.add('active');
+        calcularPreviaModal(); 
     }
+    function fecharModalFinalizarFrete() { document.getElementById('modalFinalizarFrete').classList.remove('active'); }
+
+    function calcularPreviaModal() {
+        const inputAvaria = document.getElementById('modal_avaria_pct');
+        const avaria = parseBRFloat(inputAvaria.value);
+        const comissaoBruta = freteAtivoValorBruto * PCT_COMISSAO;
+        const desconto = freteAtivoValorBruto * (avaria / 100);
+        const saldoDiferenca = comissaoBruta - desconto;
+        let comissaoLiquida = saldoDiferenca < 0 ? saldoDiferenca / 2 : saldoDiferenca;
+        document.getElementById('modalPrevBruta').textContent = formatarMoedaBR(comissaoBruta);
+        document.getElementById('modalPrevDesconto').textContent = `- ${formatarMoedaBR(desconto)}`;
+        const lblLiquida = document.getElementById('modalPrevLiquida');
+        lblLiquida.textContent = formatarMoedaBR(comissaoLiquida);
+        lblLiquida.style.color = comissaoLiquida < 0 ? 'var(--vermelho)' : 'var(--dourado)';
+    }
+
+    document.getElementById('modal_avaria_pct').addEventListener('input', calcularPreviaModal);
+
+    function abrirModalCancelarFrete() { document.getElementById('modalCancelarFrete').classList.add('active'); }
+    function fecharModalCancelarFrete() { document.getElementById('modalCancelarFrete').classList.remove('active'); }
+
+    function abrirModalExcluirViagem(idViagem) { document.getElementById('formExcluirViagem').action = '/excluir_viagem/' + idViagem; document.getElementById('modalExcluirViagem').classList.add('active'); }
     function fecharModalExcluirViagem() { document.getElementById('modalExcluirViagem').classList.remove('active'); }
-
-    function abrirModalLimparViagens() {
-        document.getElementById('modalLimparViagens').classList.add('active');
-        document.getElementById('inputConfirmaLimpezaViagens').value = '';
-        document.getElementById('btnConfirmarLimparViagens').disabled = true;
-        document.getElementById('btnConfirmarLimparViagens').style.opacity = '0.4';
-        document.getElementById('btnConfirmarLimparViagens').style.cursor = 'not-allowed';
-    }
+    function abrirModalLimparViagens() { document.getElementById('modalLimparViagens').classList.add('active'); document.getElementById('inputConfirmaLimpezaViagens').value = ''; document.getElementById('btnConfirmarLimparViagens').disabled = true; document.getElementById('btnConfirmarLimparViagens').style.opacity = '0.4'; document.getElementById('btnConfirmarLimparViagens').style.cursor = 'not-allowed'; }
     function fecharModalLimparViagens() { document.getElementById('modalLimparViagens').classList.remove('active'); }
-
-    document.getElementById('inputConfirmaLimpezaViagens').addEventListener('input', function() {
-        const btn = document.getElementById('btnConfirmarLimparViagens');
-        if(this.value.trim().toUpperCase() === 'LIMPAR') {
-            btn.disabled = false; btn.style.opacity = '1'; btn.style.cursor = 'pointer';
-        } else {
-            btn.disabled = true; btn.style.opacity = '0.4'; btn.style.cursor = 'not-allowed';
-        }
-    });
-
-    function abrirModalExcluirDia(idDia, numeroDia) {
-        document.getElementById('formExcluirDia').action = '/excluir_dia/' + idDia;
-        document.getElementById('txtNumeroDiaModal').innerText = ("0" + numeroDia).slice(-2); 
-        document.getElementById('modalExcluirDia').classList.add('active');
-    }
+    document.getElementById('inputConfirmaLimpezaViagens').addEventListener('input', function() { const btn = document.getElementById('btnConfirmarLimparViagens'); if(this.value.trim().toUpperCase() === 'LIMPAR') { btn.disabled = false; btn.style.opacity = '1'; btn.style.cursor = 'pointer'; } else { btn.disabled = true; btn.style.opacity = '0.4'; btn.style.cursor = 'not-allowed'; } });
+    function abrirModalExcluirDia(idDia, numeroDia) { document.getElementById('formExcluirDia').action = '/excluir_dia/' + idDia; document.getElementById('txtNumeroDiaModal').innerText = ("0" + numeroDia).slice(-2); document.getElementById('modalExcluirDia').classList.add('active'); }
     function fecharModalExcluirDia() { document.getElementById('modalExcluirDia').classList.remove('active'); }
-
-    function abrirModalLimparHistorico() {
-        document.getElementById('modalLimparHistorico').classList.add('active');
-        document.getElementById('inputConfirmaLimpeza').value = '';
-        document.getElementById('btnConfirmarLimpar').disabled = true;
-        document.getElementById('btnConfirmarLimpar').style.opacity = '0.4';
-        document.getElementById('btnConfirmarLimpar').style.cursor = 'not-allowed';
-    }
+    function abrirModalLimparHistorico() { document.getElementById('modalLimparHistorico').classList.add('active'); document.getElementById('inputConfirmaLimpeza').value = ''; document.getElementById('btnConfirmarLimpar').disabled = true; document.getElementById('btnConfirmarLimpar').style.opacity = '0.4'; document.getElementById('btnConfirmarLimpar').style.cursor = 'not-allowed'; }
     function fecharModalLimparHistorico() { document.getElementById('modalLimparHistorico').classList.remove('active'); }
-
-    document.getElementById('inputConfirmaLimpeza').addEventListener('input', function() {
-        const btn = document.getElementById('btnConfirmarLimpar');
-        if(this.value.trim().toUpperCase() === 'LIMPAR') {
-            btn.disabled = false; btn.style.opacity = '1'; btn.style.cursor = 'pointer';
-        } else {
-            btn.disabled = true; btn.style.opacity = '0.4'; btn.style.cursor = 'not-allowed';
-        }
-    });
+    document.getElementById('inputConfirmaLimpeza').addEventListener('input', function() { const btn = document.getElementById('btnConfirmarLimpar'); if(this.value.trim().toUpperCase() === 'LIMPAR') { btn.disabled = false; btn.style.opacity = '1'; btn.style.cursor = 'pointer'; } else { btn.disabled = true; btn.style.opacity = '0.4'; btn.style.cursor = 'not-allowed'; } });
 
     const PEDE_CONFIRMACAO_VOLTAR = {{ 'true' if jogador.confirmar_voltar_dia else 'false' }};
-
-    function tentarVoltarDia() {
-        if (PEDE_CONFIRMACAO_VOLTAR) {
-            document.getElementById('modalVoltarDia').classList.add('active');
-        } else {
-            document.getElementById('formVoltarDia').submit();
-        }
-    }
-
-    function fecharModalVoltarDia() {
-        document.getElementById('modalVoltarDia').classList.remove('active');
-    }
-
-    function confirmarVoltarDiaExecutar() {
-        const chk = document.getElementById('chkNaoPerguntarMais');
-        if (chk && chk.checked) {
-            document.getElementById('inputNaoPerguntarMais').value = 'on';
-        }
-        document.getElementById('formVoltarDia').submit();
-    }
-
+    function tentarVoltarDia() { if (PEDE_CONFIRMACAO_VOLTAR) { document.getElementById('modalVoltarDia').classList.add('active'); } else { document.getElementById('formVoltarDia').submit(); } }
+    function fecharModalVoltarDia() { document.getElementById('modalVoltarDia').classList.remove('active'); }
+    function confirmarVoltarDiaExecutar() { const chk = document.getElementById('chkNaoPerguntarMais'); if (chk && chk.checked) { document.getElementById('inputNaoPerguntarMais').value = 'on'; } document.getElementById('formVoltarDia').submit(); }
     function abrirModalAcidente() { document.getElementById('modalAcidente').classList.add('active'); }
     function fecharModalAcidente() { document.getElementById('modalAcidente').classList.remove('active'); }
     function confirmarAcidente() { document.getElementById('formAcidente').submit(); }
-
-    /* ========================================= */
-    /* LOGICA AJAX E SCROLL FIX                  */
-    /* ========================================= */
 
     const formEvento = document.getElementById('formEvento');
     if (formEvento) {
@@ -659,24 +522,13 @@
             e.preventDefault();
             const formData = new FormData(this);
             try {
-                const response = await fetch('/registrar_evento', {
-                    method: 'POST', body: formData, headers: { 'X-Requested-With': 'XMLHttpRequest' }
-                });
+                const response = await fetch('/registrar_evento', { method: 'POST', body: formData, headers: { 'X-Requested-With': 'XMLHttpRequest' } });
                 if (response.ok) { window.location.reload(); } else { this.submit(); }
             } catch (err) { this.submit(); }
         });
     }
 
-    document.querySelectorAll('form').forEach(form => {
-        form.addEventListener('submit', () => { sessionStorage.setItem('scrollPos', window.scrollY); });
-    });
-
-    window.addEventListener('load', () => {
-        const scrollPos = sessionStorage.getItem('scrollPos');
-        if (scrollPos) {
-            window.scrollTo(0, parseInt(scrollPos, 10));
-            sessionStorage.removeItem('scrollPos'); 
-        }
-    });
+    document.querySelectorAll('form').forEach(form => { form.addEventListener('submit', () => { sessionStorage.setItem('scrollPos', window.scrollY); }); });
+    window.addEventListener('load', () => { const scrollPos = sessionStorage.getItem('scrollPos'); if (scrollPos) { window.scrollTo(0, parseInt(scrollPos, 10)); sessionStorage.removeItem('scrollPos'); } });
 </script>
 {% endblock %}
